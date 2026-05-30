@@ -2,10 +2,14 @@
  * Author: Jamius Siam
  * Since: 30/05/2026
  */
-import { simpleGit } from "simple-git";
+import { simpleGit, type SimpleGit } from "simple-git";
 import type { DiffChangeType, DiffFileData } from "../@types/diff.ts";
 
 const REPOSITORY_PATH = "K:\\projects\\flightdrift";
+const DIFF_BASE_REF = "main";
+const DIFF_HEAD_REF = "feature/integrating-auth";
+
+type DiffFileMetadata = Omit<DiffFileData, "oldFileContent" | "newFileContent">;
 
 export class DiffService {
   static normalizeDiffPath(path: string): string {
@@ -85,7 +89,7 @@ export class DiffService {
     return blocks;
   }
 
-  static parseDiffFiles(diffContent: string): DiffFileData[] {
+  static parseDiffFiles(diffContent: string): DiffFileMetadata[] {
     return DiffService.splitDiffBlocks(diffContent).map((rawDiff) => {
       const lines = rawDiff.split("\n");
       const oldFileName = DiffService.getHeaderPath(lines, "--- ");
@@ -105,10 +109,50 @@ export class DiffService {
   static async fetchDiffContent(repoPath: string): Promise<string> {
     const git = simpleGit(repoPath);
 
-    return git.diff(["HEAD~5", "HEAD"]);
+      return git.diff([DIFF_BASE_REF, DIFF_HEAD_REF]);
+  }
+
+  static async fetchFileContent(
+    git: SimpleGit,
+    revision: string,
+    fileName: string,
+  ): Promise<string> {
+    if (!fileName || fileName === "/dev/null") {
+      return "";
+    }
+
+    return git.raw(["show", `${revision}:${fileName}`]);
+  }
+
+  static async attachFileContent(
+    git: SimpleGit,
+    diffFile: DiffFileMetadata,
+  ): Promise<DiffFileData> {
+    const [oldFileContent, newFileContent] = await Promise.all([
+      DiffService.fetchFileContent(git, DIFF_BASE_REF, diffFile.oldFileName),
+      DiffService.fetchFileContent(git, DIFF_HEAD_REF, diffFile.newFileName),
+    ]);
+
+    return {
+      ...diffFile,
+      oldFileContent,
+      newFileContent,
+    };
+  }
+
+  static async fetchDiffFiles(repoPath: string): Promise<DiffFileData[]> {
+    const git = simpleGit(repoPath);
+    const diffContent = await git.diff([DIFF_BASE_REF, DIFF_HEAD_REF]);
+    const diffFiles = DiffService.parseDiffFiles(diffContent);
+
+    return Promise.all(diffFiles.map((diffFile) => DiffService.attachFileContent(git, diffFile)));
   }
 
   static getDiffContent(): Promise<string> {
     return DiffService.fetchDiffContent(REPOSITORY_PATH);
+  }
+
+  static getDiffFiles(): Promise<DiffFileData[]> {
+    return DiffService.fetchDiffFiles(REPOSITORY_PATH);
   }
 }

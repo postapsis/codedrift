@@ -6,7 +6,9 @@ export type DiffChangeType = "changed" | "added" | "moved" | "deleted";
 
 export type DiffFileData = {
   oldFileName: string;
+  oldFileContent: string;
   newFileName: string;
+  newFileContent: string;
   fileLanguage: string;
   rawDiff: string;
   changeType: DiffChangeType;
