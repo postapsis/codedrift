@@ -7,13 +7,16 @@ import { DiffModeEnum, DiffView } from "@git-diff-view/react";
 import "@git-diff-view/react/styles/diff-view-pure.css";
 import { createFileRoute } from "@tanstack/react-router";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
-import {
-  getDiffFileDisplayPath,
-  useDiffViewContext,
-} from "@/lib/diff-view-context.ts";
+import { useDiffViewStore } from "@/store/diff-view-store.ts";
+import { getDiffFileDisplayPath, getSelectedDiffFile } from "@/lib/diff-utils.ts";
 
 const View = (): JSX.Element => {
-  const { selectedFile, isLoading, errorMessage } = useDiffViewContext();
+  const diffFiles = useDiffViewStore((state) => state.diffFiles);
+  const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
+  const isLoading = useDiffViewStore((state) => state.isLoading);
+  const errorMessage = useDiffViewStore((state) => state.errorMessage);
+
+  const selectedFile = getSelectedDiffFile(diffFiles, selectedFileId);
 
   if (isLoading) {
     return (

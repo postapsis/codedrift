@@ -16,12 +16,9 @@ import {
 } from "lucide-react";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { cn } from "@/lib/utils.ts";
-import {
-  getDiffFileDisplayPath,
-  getDiffFileId,
-  useDiffViewContext,
-} from "../../lib/diff-view-context.ts";
+import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import type { DiffChangeType, DiffFileData } from "@/@types/diff.ts";
+import { getDiffFileDisplayPath, getDiffFileId } from "@/lib/diff-utils.ts";
 
 type FileTreeItem = {
   id: string;
@@ -208,8 +205,11 @@ const renderTreeItems = (
 };
 
 const Sidebar = (): JSX.Element => {
-  const { diffFiles, selectedFileId, setSelectedFileId, isLoading, errorMessage } =
-    useDiffViewContext();
+  const diffFiles = useDiffViewStore((state) => state.diffFiles);
+  const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
+  const setSelectedFileId = useDiffViewStore((state) => state.setSelectedFileId);
+  const isLoading = useDiffViewStore((state) => state.isLoading);
+  const errorMessage = useDiffViewStore((state) => state.errorMessage);
 
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => new Set());
 
