@@ -5,12 +5,20 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { JSX } from "react";
+import Sidebar from "@/components/sidebar/sidebar.tsx";
+import Header from "@/components/header/header";
 
 const RootLayout = (): JSX.Element => (
-  <>
-    <Outlet />
-    <TanStackRouterDevtools position={"bottom-right"}/>
-  </>
+  <div className="flex flex-col h-screen px-3 pt-4 gap-3.5">
+    <Header />
+    <main className={"rounded h-full flex-1 flex gap-3"}>
+      <Sidebar />
+      <div className="flex-1 w-full h-full px-4 py-3 bg-white rounded shadow-md">
+        <Outlet />
+      </div>
+    </main>
+    <TanStackRouterDevtools position={"bottom-right"} />
+  </div>
 );
 
 export const Route = createRootRoute({ component: RootLayout });
