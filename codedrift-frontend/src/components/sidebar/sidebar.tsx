@@ -137,8 +137,8 @@ const renderTreeItems = (
     const indentLines = Array.from({ length: level }, (_, index) => (
       <span
         key={`${item.id}-line-${index}`}
-        className="absolute bottom-0 top-0 w-px bg-border"
-        style={{ left: `${index * TREE_INDENT_WIDTH + TREE_INDENT_WIDTH / 2}px` }}
+        className="absolute bottom-0 top-0 w-px border-l border-dashed border-foreground/30"
+        style={{ left: `${index * TREE_INDENT_WIDTH + TREE_INDENT_WIDTH / 2 - 3}px` }}
       />
     ));
 
@@ -155,12 +155,12 @@ const renderTreeItems = (
             aria-expanded={!isCollapsed}
             className={cn(
               "relative flex h-7 w-full min-w-max items-center gap-1 rounded pr-3 text-left text-xs",
-              "text-muted-foreground hover:bg-nav-active/40",
+              "text-foreground hover:bg-nav-active/40",
             )}
             style={{ paddingLeft: `${level * TREE_INDENT_WIDTH}px` }}
             onClick={() => onToggleFolder(item.id)}>
-            <ChevronIcon className="size-3 shrink-0 text-muted-foreground" strokeWidth={1.8} />
-            <FolderIcon className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.8} />
+            <ChevronIcon className="size-3 shrink-0 text-foreground/80" strokeWidth={1.8} />
+            <FolderIcon className="size-4 shrink-0 text-foreground/80" strokeWidth={1.8} />
             <span className="whitespace-nowrap">{item.name}</span>
           </button>
         </div>,
@@ -208,8 +208,6 @@ const Sidebar = (): JSX.Element => {
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
   const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
   const setSelectedFileId = useDiffViewStore((state) => state.setSelectedFileId);
-  const isLoading = useDiffViewStore((state) => state.isLoading);
-  const errorMessage = useDiffViewStore((state) => state.errorMessage);
 
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => new Set());
 
@@ -231,27 +229,21 @@ const Sidebar = (): JSX.Element => {
 
   return (
     <div className="flex min-w-[300px] max-w-[300px] flex-col rounded bg-white px-4 pb-3 pt-4 shadow-md">
-      <div className="border-b border-border pb-3">
+      <div className="border-b border-muted pb-3">
         <h1 className="font-heading text-lg font-semibold">Changeset</h1>
         <p className="text-xs text-muted-foreground">{diffFiles.length} changed files</p>
       </div>
 
       <div className={`min-h-0 flex-1 overflow-auto pt-3 ${THIN_SCROLLBAR_CLASS}`}>
-        {isLoading && <div className="text-xs text-muted-foreground">Loading diff...</div>}
-
-        {errorMessage && <div className="text-xs text-destructive">{errorMessage}</div>}
-
-        {!errorMessage && (
-          <div className="inline-flex min-w-full flex-col pb-1 pr-1">
-            {renderTreeItems(
-              fileTree,
-              selectedFileId,
-              setSelectedFileId,
-              collapsedFolderIds,
-              toggleFolder,
-            )}
-          </div>
-        )}
+        <div className="inline-flex min-w-full flex-col pb-1 pr-1">
+          {renderTreeItems(
+            fileTree,
+            selectedFileId,
+            setSelectedFileId,
+            collapsedFolderIds,
+            toggleFolder,
+          )}
+        </div>
       </div>
     </div>
   );

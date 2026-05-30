@@ -13,24 +13,8 @@ import { getDiffFileDisplayPath, getSelectedDiffFile } from "@/lib/diff-utils.ts
 const View = (): JSX.Element => {
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
   const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
-  const isLoading = useDiffViewStore((state) => state.isLoading);
-  const errorMessage = useDiffViewStore((state) => state.errorMessage);
 
   const selectedFile = getSelectedDiffFile(diffFiles, selectedFileId);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        Loading diff...
-      </div>
-    );
-  }
-
-  if (errorMessage) {
-    return (
-      <div className="flex h-full items-center justify-center text-destructive">{errorMessage}</div>
-    );
-  }
 
   if (!selectedFile) {
     return (

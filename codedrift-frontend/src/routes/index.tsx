@@ -12,7 +12,7 @@ const Index = (): JSX.Element => {
       <h3>Welcome to Codedrift</h3>
 
       <Link to="/diff/select">
-        <Button>Stacked Diff</Button>
+        <Button>Stacked diff</Button>
       </Link>
     </div>
   );
