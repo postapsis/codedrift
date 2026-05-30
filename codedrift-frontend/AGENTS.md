@@ -2,12 +2,13 @@ This is an open source fully client-side application about code management/code 
 
 ## Techstack
 1. React
-2. Tanstack Router
-3. Typescript
-4. Tailwind CSS
-5. Shadcn UI
-6. Zod
-7. Vite
+2. Typescript
+3. Tailwind CSS
+4. Shadcn UI
+5. Tanstack Router
+6. Tanstack Query
+7. Zod
+8. Vite
 
 ## Rules
 Here are some rules for the project:
