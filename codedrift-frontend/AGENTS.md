@@ -1,6 +1,7 @@
 This is an open source fully client-side application about code management/code intelligence app called `Codedrift`.
 
 ## Techstack
+
 1. React
 2. Typescript
 3. Tailwind CSS
@@ -11,6 +12,7 @@ This is an open source fully client-side application about code management/code 
 8. Vite
 
 ## Rules
+
 Here are some rules for the project:
 
 1. After your changes, compile with `tsc` and run prettier to format the code.
@@ -31,3 +33,5 @@ Here are some rules for the project:
     13. If people usually use a specific library for a specific task, prompt the user if they want to use it. (e.g.,
         form validation with Zod)
     14. If variables can be moved outside the component, do so.
+    15. Use Zod for form validation.
+    16. Use Zustand for state management.
