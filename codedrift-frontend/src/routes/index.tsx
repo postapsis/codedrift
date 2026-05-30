@@ -8,7 +8,7 @@ import type {JSX} from "react";
 const Index = (): JSX.Element => {
   return (
     <div className="p-2">
-      <h3>Welcome to Codedrift!</h3>
+      <h3 className={"text-2xl font-bold"}>Welcome to Codedrift!</h3>
     </div>
   )
 }
