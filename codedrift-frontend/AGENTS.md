@@ -35,3 +35,4 @@ Here are some rules for the project:
     14. If variables can be moved outside the component, do so.
     15. Use Zod for form validation.
     16. Use Zustand for state management.
+    17. Use Tanstack Query for data fetching/mutations.
