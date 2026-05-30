@@ -18,10 +18,12 @@
   "description": "",
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "prettier": "3.8.3",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "fastify": "^5.8.5"
   }
 }
