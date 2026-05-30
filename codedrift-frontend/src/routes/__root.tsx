@@ -8,9 +8,9 @@ import type { JSX } from "react";
 import Header from "@/components/header/header";
 
 const RootLayout = (): JSX.Element => (
-  <div className="flex flex-col h-screen px-3 pt-4 gap-3.5">
+  <div className="flex flex-col h-screen max-h-screen px-3 p-4 gap-4">
     <Header />
-    <main className={"rounded h-full flex-1 flex gap-3"}>
+    <main className={"rounded flex-1 flex min-h-0 min-w-0 gap-3"}>
       <Outlet />
     </main>
     <TanStackRouterDevtools position={"bottom-right"} />
