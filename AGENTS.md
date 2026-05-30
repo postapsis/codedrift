@@ -1,4 +1,4 @@
-This is the repository of a project management tool called "Codedrift".
+This is the repository of a code management/code intelligence app called "Codedrift".
 
 Two main applications of this tool,
 1. Frontend (React w/ TypeScript, Tanstack Router, the project is in the `codedrift-frontend` dir)
