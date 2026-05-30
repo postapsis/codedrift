@@ -26,7 +26,7 @@ fastify.get("/", async function handler() {
 });
 
 fastify.get("/diff", async (): Promise<DiffFileData[]> => {
-  const diffContent = DiffService.getDiffContent();
+  const diffContent = await DiffService.getDiffContent();
 
   return DiffService.parseDiffFiles(diffContent);
 });
