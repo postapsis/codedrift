@@ -6,38 +6,23 @@ import { create } from "zustand";
 import type { DiffFileData } from "@/@types/diff.ts";
 import { getDiffFileId } from "@/lib/diff-utils.ts";
 
-type DiffQueryState = {
+type DiffViewStore ={
   diffFiles: DiffFileData[];
-  isLoading: boolean;
-  errorMessage: string | null;
-};
-
-type DiffViewStore = DiffQueryState & {
   selectedFileId: string | null;
-  setFromDiffQueryState: (queryState: DiffQueryState) => void;
+  setDiffFiles: (diffFiles: DiffFileData[]) => void;
   setSelectedFileId: (selectedFileId: string | null) => void;
 };
 
 export const useDiffViewStore = create<DiffViewStore>((set) => ({
   diffFiles: [],
   selectedFileId: null,
-  isLoading: true,
-  errorMessage: null,
-  setFromDiffQueryState: (queryState): void => {
+  setDiffFiles: (diffFiles): void => {
     set((state) => {
-      const selectedFileExists =
-        state.selectedFileId !== null &&
-        queryState.diffFiles.some((file) => getDiffFileId(file) === state.selectedFileId);
-
-      const firstFile = queryState.diffFiles.at(0);
+      const selectedFileId = getSelectedFileId(state, diffFiles);
 
       return {
-        ...queryState,
-        selectedFileId: selectedFileExists
-          ? state.selectedFileId
-          : firstFile
-            ? getDiffFileId(firstFile)
-            : null,
+        diffFiles,
+        selectedFileId,
       };
     });
   },
@@ -45,3 +30,22 @@ export const useDiffViewStore = create<DiffViewStore>((set) => ({
     set({ selectedFileId });
   },
 }));
+
+function getSelectedFileId(state: DiffViewStore, diffFiles: DiffFileData[]): string | null {
+  const selectedFileExists =
+    state.selectedFileId !== null &&
+    diffFiles.some((file) => getDiffFileId(file) === state.selectedFileId);
+
+  const firstFile = diffFiles.at(0);
+
+  if (selectedFileExists) {
+    // If selected file exists in the new diff files list, return it
+    return state.selectedFileId;
+  } else if (firstFile) {
+    // If selected file doesn't exist, return the first file
+    return  getDiffFileId(firstFile);
+  } else {
+    // If no files exist, return null
+    return null;
+  }
+}

@@ -43,14 +43,10 @@ const DiffViewLayout = (): JSX.Element => {
 
   const errorMessage = diffQuery.error instanceof Error ? diffQuery.error.message : null;
 
-  const setFromDiffQueryState = useDiffViewStore((state) => state.setFromDiffQueryState);
+  const setFromDiffQueryState = useDiffViewStore((state) => state.setDiffFiles);
 
   useEffect(() => {
-    setFromDiffQueryState({
-      diffFiles,
-      isLoading,
-      errorMessage,
-    });
+    setFromDiffQueryState(diffFiles);
   }, [diffFiles, errorMessage, isLoading, setFromDiffQueryState]);
 
   return (
@@ -68,7 +64,7 @@ const DiffViewLayout = (): JSX.Element => {
           className={`flex-1 overflow-auto px-4 py-3 flex justify-center items-center bg-white rounded shadow-md ${THIN_SCROLLBAR_CLASS}`}>
           {isLoading && (
             <div className="flex gap-1.5 items-center">
-              <Loader/>
+              <Loader />
               <span>Loading diff</span>
             </div>
           )}
