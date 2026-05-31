@@ -4,10 +4,7 @@
  */
 import { simpleGit, type SimpleGit } from "simple-git";
 import type { DiffChangeType, DiffFileData } from "../@types/diff.ts";
-
-export const REPOSITORY_PATH = "K:\\projects\\flightdrift";
-export const DIFF_BASE_REF = "main";
-export const DIFF_HEAD_REF = "feature/integrating-auth";
+import { DIFF_BASE_REF, DIFF_HEAD_REF, REPOSITORY_PATH } from "../utils/temp-repo-info.ts";
 
 type DiffFileMetadata = Omit<DiffFileData, "oldFileContent" | "newFileContent">;
 
