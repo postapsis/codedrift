@@ -30,6 +30,10 @@ export type ChangesetAssociatedCommit = {
   date: string;
 };
 
+export type ChangesetFileHunk = {
+  hunk: string;
+};
+
 type CommitMetadata = {
   hash: string;
   shortHash: string;
@@ -61,7 +65,7 @@ const fileContentAtRevisionToolInputSchema = filePathToolInputSchema
 export type ChangesetToolSet = {
   allCommits: Tool<EmptyToolInput, ChangesetCommitSummary[]>;
   associatedCommitsForFile: Tool<FilePathToolInput, ChangesetAssociatedCommit[]>;
-  rawHunkForFile: Tool<FilePathToolInput, string>;
+  hunksForFile: Tool<FilePathToolInput, ChangesetFileHunk[]>;
   fileContentAtRevision: Tool<FileContentAtRevisionToolInput, string>;
 };
 
@@ -93,11 +97,10 @@ export class ChangesetTools {
           return this.getAssociatedCommitsForFile(filePath);
         },
       }),
-      rawHunkForFile: tool({
-        description:
-          "Return the raw git diff hunk for a repository file path between base and head refs.",
+      hunksForFile: tool({
+        description: "Return git diff hunks for a repository file path between base and head refs.",
         inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<string> => this.getRawHunkForFile(filePath),
+        execute: ({ filePath }): Promise<ChangesetFileHunk[]> => this.getHunksForFile(filePath),
       }),
       fileContentAtRevision: tool({
         description: "Return full file content for a repository file path at a git revision.",
@@ -131,10 +134,11 @@ export class ChangesetTools {
     }));
   }
 
-  getRawHunkForFile(filePath: string): Promise<string> {
+  async getHunksForFile(filePath: string): Promise<ChangesetFileHunk[]> {
     const relativePath = this.getRepoRelativePath(filePath);
+    const diff = await this.git.diff([this.baseRef, this.headRef, "--", relativePath]);
 
-    return this.git.diff([this.baseRef, this.headRef, "--", relativePath]);
+    return ChangesetTools.parseDiffHunks(diff);
   }
 
   getFileContentAtRevision(filePath: string, revision: string): Promise<string> {
@@ -230,6 +234,41 @@ export class ChangesetTools {
     }
 
     return commits;
+  }
+
+  private static parseDiffHunks(diffContent: string): ChangesetFileHunk[] {
+    const normalizedDiff = diffContent.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+
+    if (!normalizedDiff) {
+      return [];
+    }
+
+    const lines = normalizedDiff.endsWith("\n")
+      ? normalizedDiff.slice(0, -1).split("\n")
+      : normalizedDiff.split("\n");
+    const hunks: ChangesetFileHunk[] = [];
+    let currentHunkLines: string[] = [];
+
+    for (const line of lines) {
+      if (line.startsWith("@@ ")) {
+        if (currentHunkLines.length > 0) {
+          hunks.push({ hunk: currentHunkLines.join("\n") });
+        }
+
+        currentHunkLines = [line];
+        continue;
+      }
+
+      if (currentHunkLines.length > 0) {
+        currentHunkLines.push(line);
+      }
+    }
+
+    if (currentHunkLines.length > 0) {
+      hunks.push({ hunk: currentHunkLines.join("\n") });
+    }
+
+    return hunks;
   }
 
   private static parseCommitMetadataLine(line: string): CommitMetadata | null {
