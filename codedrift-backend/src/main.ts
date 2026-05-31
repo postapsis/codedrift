@@ -11,7 +11,6 @@ import { createOpenAI } from "@ai-sdk/openai";
 import {
   ChangesetInputError,
   ChangesetTools,
-  type ChangesetAssociatedCommit,
   type ChangesetCommitSummary,
   type ChangesetFileHunk,
 } from "./tools/changeset-tools.ts";
@@ -112,30 +111,6 @@ fastify.post("/tools/changeset/all-commits", async (): Promise<ChangesetCommitSu
 
   return executeChangesetTool(changesetTools.tools.allCommits, {}, "manual-all-commits");
 });
-
-fastify.post<{ Body: FilePathRequestBody }>(
-  "/tools/changeset/associated-commits",
-  async (request, reply): Promise<ChangesetAssociatedCommit[] | void> => {
-    const filePath = getRequiredStringBodyField(request.body, "filePath");
-
-    if (!filePath) {
-      await sendBadRequest(reply, "filePath is required");
-      return;
-    }
-
-    try {
-      const changesetTools = createChangesetTools();
-
-      return await executeChangesetTool(
-        changesetTools.tools.associatedCommitsForFile,
-        { filePath },
-        "manual-associated-commits-for-file",
-      );
-    } catch (error) {
-      await handleChangesetError(reply, error);
-    }
-  },
-);
 
 fastify.post<{ Body: FilePathRequestBody }>(
   "/tools/changeset/hunks",

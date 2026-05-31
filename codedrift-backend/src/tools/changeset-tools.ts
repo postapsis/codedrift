@@ -24,12 +24,6 @@ export type ChangesetCommitSummary = {
   changedFilePaths: string[];
 };
 
-export type ChangesetAssociatedCommit = {
-  shortHash: string;
-  message: string;
-  date: string;
-};
-
 export type ChangesetFileHunk = {
   hunk: string;
 };
@@ -64,7 +58,6 @@ const fileContentAtRevisionToolInputSchema = filePathToolInputSchema
 
 export type ChangesetToolSet = {
   allCommits: Tool<EmptyToolInput, ChangesetCommitSummary[]>;
-  associatedCommitsForFile: Tool<FilePathToolInput, ChangesetAssociatedCommit[]>;
   hunksForFile: Tool<FilePathToolInput, ChangesetFileHunk[]>;
   fileContentAtRevision: Tool<FileContentAtRevisionToolInput, string>;
 };
@@ -90,13 +83,6 @@ export class ChangesetTools {
         inputSchema: emptyToolInputSchema,
         execute: (): Promise<ChangesetCommitSummary[]> => this.getAllCommits(),
       }),
-      associatedCommitsForFile: tool({
-        description: "List commits between base and head refs that changed a repository file path.",
-        inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<ChangesetAssociatedCommit[]> => {
-          return this.getAssociatedCommitsForFile(filePath);
-        },
-      }),
       hunksForFile: tool({
         description: "Return git diff hunks for a repository file path between base and head refs.",
         inputSchema: filePathToolInputSchema,
@@ -120,17 +106,6 @@ export class ChangesetTools {
       message,
       date,
       changedFilePaths,
-    }));
-  }
-
-  async getAssociatedCommitsForFile(filePath: string): Promise<ChangesetAssociatedCommit[]> {
-    const relativePath = this.getRepoRelativePath(filePath);
-    const commits = await this.getCommitsForFile(relativePath);
-
-    return commits.map(({ shortHash, message, date }) => ({
-      shortHash,
-      message,
-      date,
     }));
   }
 
@@ -189,23 +164,6 @@ export class ChangesetTools {
     ]);
 
     return this.parseCommitLog(logOutput);
-  }
-
-  private async getCommitsForFile(relativePath: string): Promise<CommitMetadata[]> {
-    const logOutput = await this.git.raw([
-      "log",
-      this.getRange(),
-      "--pretty=format:%H%x1f%h%x1f%s%x1f%cI",
-      "--",
-      relativePath,
-    ]);
-
-    return this.parseCommitLog(logOutput).map(({ hash, shortHash, message, date }) => ({
-      hash,
-      shortHash,
-      message,
-      date,
-    }));
   }
 
   private parseCommitLog(logOutput: string): CommitWithChangedFiles[] {
