@@ -13,8 +13,8 @@ http:
     type: json
     data: |-
       {
-        "filePath": "flightdrift-frontend/package.json",
-        "revision": "main"
+        "filePath": "flightdrift-frontend/src/routes/auth/signin.tsx",
+        "revision": "87369c2"
       }
   auth: inherit
 

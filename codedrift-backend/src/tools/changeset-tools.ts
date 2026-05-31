@@ -18,12 +18,14 @@ type FileContentAtRevisionToolInput = FilePathToolInput & {
 };
 
 export type ChangesetCommitSummary = {
+  shortHash: string;
   message: string;
   date: string;
   changedFilePaths: string[];
 };
 
 export type ChangesetAssociatedCommit = {
+  shortHash: string;
   message: string;
   date: string;
   diff: string;
@@ -31,6 +33,7 @@ export type ChangesetAssociatedCommit = {
 
 type CommitMetadata = {
   hash: string;
+  shortHash: string;
   message: string;
   date: string;
 };
@@ -111,7 +114,8 @@ export class ChangesetTools {
   async getAllCommits(): Promise<ChangesetCommitSummary[]> {
     const commits = await this.getCommitsWithChangedFiles();
 
-    return commits.map(({ message, date, changedFilePaths }) => ({
+    return commits.map(({ shortHash, message, date, changedFilePaths }) => ({
+      shortHash,
       message,
       date,
       changedFilePaths,
@@ -123,7 +127,8 @@ export class ChangesetTools {
     const commits = await this.getCommitsForFile(relativePath);
 
     return Promise.all(
-      commits.map(async ({ hash, message, date }) => ({
+      commits.map(async ({ hash, shortHash, message, date }) => ({
+        shortHash,
         message,
         date,
         diff: await this.git.raw(["show", "--format=", "--patch", hash, "--", relativePath]),
@@ -181,7 +186,7 @@ export class ChangesetTools {
       "log",
       this.getRange(),
       "--name-only",
-      "--pretty=format:%H%x1f%s%x1f%cI",
+      "--pretty=format:%H%x1f%h%x1f%s%x1f%cI",
     ]);
 
     return this.parseCommitLog(logOutput);
@@ -191,13 +196,14 @@ export class ChangesetTools {
     const logOutput = await this.git.raw([
       "log",
       this.getRange(),
-      "--pretty=format:%H%x1f%s%x1f%cI",
+      "--pretty=format:%H%x1f%h%x1f%s%x1f%cI",
       "--",
       relativePath,
     ]);
 
-    return this.parseCommitLog(logOutput).map(({ hash, message, date }) => ({
+    return this.parseCommitLog(logOutput).map(({ hash, shortHash, message, date }) => ({
       hash,
+      shortHash,
       message,
       date,
     }));
@@ -232,14 +238,15 @@ export class ChangesetTools {
   }
 
   private static parseCommitMetadataLine(line: string): CommitMetadata | null {
-    const [hash, message, date] = line.split("\u001f");
+    const [hash, shortHash, message, date] = line.split("\u001f");
 
-    if (!hash || !message || !date) {
+    if (!hash || !shortHash || !message || !date) {
       return null;
     }
 
     return {
       hash,
+      shortHash,
       message,
       date,
     };
