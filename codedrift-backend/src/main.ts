@@ -6,6 +6,19 @@ import "dotenv/config";
 import Fastify from "fastify";
 import { DiffService } from "./services/diff-service.ts";
 import type { DiffFileData } from "./@types/diff.ts";
+import { generateText } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
+
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
+
+// const { text } = await generateText({
+//   model: openai("gpt-5.4"),
+//   prompt: "What is love?",
+// });
+//
+// console.log(`AI response: ${text}`);
 
 const fastify = Fastify({
   logger: true,
