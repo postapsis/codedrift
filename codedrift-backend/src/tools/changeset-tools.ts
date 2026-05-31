@@ -3,8 +3,9 @@
  * Since: 31/05/2026
  */
 import path from "node:path";
-import { jsonSchema, tool, type Tool } from "ai";
+import { tool, type Tool } from "ai";
 import { simpleGit, type SimpleGit } from "simple-git";
+import { z } from "zod";
 
 type EmptyToolInput = Record<string, never>;
 
@@ -38,6 +39,23 @@ type CommitWithChangedFiles = CommitMetadata & {
   changedFilePaths: string[];
 };
 
+const emptyToolInputSchema = z.object({}).strict();
+
+const filePathToolInputSchema = z
+  .object({
+    filePath: z
+      .string()
+      .min(1)
+      .describe("Repository file path, relative to the configured repository root."),
+  })
+  .strict();
+
+const fileContentAtRevisionToolInputSchema = filePathToolInputSchema
+  .extend({
+    revision: z.string().min(1).describe("Git revision to read from."),
+  })
+  .strict();
+
 export type ChangesetToolSet = {
   allCommits: Tool<EmptyToolInput, ChangesetCommitSummary[]>;
   associatedCommitsForFile: Tool<FilePathToolInput, ChangesetAssociatedCommit[]>;
@@ -63,27 +81,13 @@ export class ChangesetTools {
       allCommits: tool({
         description:
           "List commits between base and head refs with message, date, and changed repository file paths.",
-        inputSchema: jsonSchema<EmptyToolInput>({
-          type: "object",
-          properties: {},
-          additionalProperties: false,
-        }),
+        inputSchema: emptyToolInputSchema,
         execute: (): Promise<ChangesetCommitSummary[]> => this.getAllCommits(),
       }),
       associatedCommitsForFile: tool({
         description:
           "List commits between base and head refs that changed a repository file path, including each diff.",
-        inputSchema: jsonSchema<FilePathToolInput>({
-          type: "object",
-          properties: {
-            filePath: {
-              type: "string",
-              description: "Repository file path, relative to the configured repository root.",
-            },
-          },
-          required: ["filePath"],
-          additionalProperties: false,
-        }),
+        inputSchema: filePathToolInputSchema,
         execute: ({ filePath }): Promise<ChangesetAssociatedCommit[]> => {
           return this.getAssociatedCommitsForFile(filePath);
         },
@@ -91,36 +95,12 @@ export class ChangesetTools {
       rawHunkForFile: tool({
         description:
           "Return the raw git diff hunk for a repository file path between base and head refs.",
-        inputSchema: jsonSchema<FilePathToolInput>({
-          type: "object",
-          properties: {
-            filePath: {
-              type: "string",
-              description: "Repository file path, relative to the configured repository root.",
-            },
-          },
-          required: ["filePath"],
-          additionalProperties: false,
-        }),
+        inputSchema: filePathToolInputSchema,
         execute: ({ filePath }): Promise<string> => this.getRawHunkForFile(filePath),
       }),
       fileContentAtRevision: tool({
         description: "Return full file content for a repository file path at a git revision.",
-        inputSchema: jsonSchema<FileContentAtRevisionToolInput>({
-          type: "object",
-          properties: {
-            filePath: {
-              type: "string",
-              description: "Repository file path, relative to the configured repository root.",
-            },
-            revision: {
-              type: "string",
-              description: "Git revision to read from.",
-            },
-          },
-          required: ["filePath", "revision"],
-          additionalProperties: false,
-        }),
+        inputSchema: fileContentAtRevisionToolInputSchema,
         execute: ({ filePath, revision }): Promise<string> => {
           return this.getFileContentAtRevision(filePath, revision);
         },
