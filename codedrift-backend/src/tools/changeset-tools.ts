@@ -28,7 +28,6 @@ export type ChangesetAssociatedCommit = {
   shortHash: string;
   message: string;
   date: string;
-  diff: string;
 };
 
 type CommitMetadata = {
@@ -88,8 +87,7 @@ export class ChangesetTools {
         execute: (): Promise<ChangesetCommitSummary[]> => this.getAllCommits(),
       }),
       associatedCommitsForFile: tool({
-        description:
-          "List commits between base and head refs that changed a repository file path, including each diff.",
+        description: "List commits between base and head refs that changed a repository file path.",
         inputSchema: filePathToolInputSchema,
         execute: ({ filePath }): Promise<ChangesetAssociatedCommit[]> => {
           return this.getAssociatedCommitsForFile(filePath);
@@ -126,14 +124,11 @@ export class ChangesetTools {
     const relativePath = this.getRepoRelativePath(filePath);
     const commits = await this.getCommitsForFile(relativePath);
 
-    return Promise.all(
-      commits.map(async ({ hash, shortHash, message, date }) => ({
-        shortHash,
-        message,
-        date,
-        diff: await this.git.raw(["show", "--format=", "--patch", hash, "--", relativePath]),
-      })),
-    );
+    return commits.map(({ shortHash, message, date }) => ({
+      shortHash,
+      message,
+      date,
+    }));
   }
 
   getRawHunkForFile(filePath: string): Promise<string> {
