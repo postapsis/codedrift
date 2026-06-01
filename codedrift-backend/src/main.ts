@@ -6,27 +6,15 @@ import "dotenv/config";
 import Fastify, { type FastifyReply } from "fastify";
 import { DiffService } from "./services/diff-service.ts";
 import type { DiffFileData } from "./@types/diff.ts";
-import { generateText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
 import {
   ChangesetInputError,
   ChangesetTools,
   type ChangesetCommitSummary,
+  type ChangesetFileContent,
   type ChangesetFileHunk,
 } from "./tools/changeset-tools.ts";
 import { DIFF_BASE_REF, DIFF_HEAD_REF, REPOSITORY_PATH } from "./utils/temp-repo-info.ts";
 import type { Tool, ToolExecutionOptions } from "ai";
-
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
-
-// const { text } = await generateText({
-//   model: openai("gpt-5.4"),
-//   prompt: "What is love?",
-// });
-//
-// console.log(`AI response: ${text}`);
 
 const fastify = Fastify({
   logger: true,
@@ -34,10 +22,6 @@ const fastify = Fastify({
 
 type FilePathRequestBody = {
   filePath?: unknown;
-};
-
-type FileContentAtRevisionRequestBody = FilePathRequestBody & {
-  revision?: unknown;
 };
 
 const getToolExecutionOptions = (toolCallId: string): ToolExecutionOptions => ({
@@ -136,19 +120,13 @@ fastify.post<{ Body: FilePathRequestBody }>(
   },
 );
 
-fastify.post<{ Body: FileContentAtRevisionRequestBody }>(
-  "/tools/changeset/file-content-at-revision",
-  async (request, reply): Promise<string | void> => {
+fastify.post<{ Body: FilePathRequestBody }>(
+  "/tools/changeset/file-content-at-base",
+  async (request, reply): Promise<ChangesetFileContent | void> => {
     const filePath = getRequiredStringBodyField(request.body, "filePath");
-    const revision = getRequiredStringBodyField(request.body, "revision");
 
     if (!filePath) {
       await sendBadRequest(reply, "filePath is required");
-      return;
-    }
-
-    if (!revision) {
-      await sendBadRequest(reply, "revision is required");
       return;
     }
 
@@ -156,9 +134,33 @@ fastify.post<{ Body: FileContentAtRevisionRequestBody }>(
       const changesetTools = createChangesetTools();
 
       return await executeChangesetTool(
-        changesetTools.tools.fileContentAtRevision,
-        { filePath, revision },
-        "manual-file-content-at-revision",
+        changesetTools.tools.fileContentAtBase,
+        { filePath },
+        "manual-file-content-at-base",
+      );
+    } catch (error) {
+      await handleChangesetError(reply, error);
+    }
+  },
+);
+
+fastify.post<{ Body: FilePathRequestBody }>(
+  "/tools/changeset/file-content-at-head",
+  async (request, reply): Promise<ChangesetFileContent | void> => {
+    const filePath = getRequiredStringBodyField(request.body, "filePath");
+
+    if (!filePath) {
+      await sendBadRequest(reply, "filePath is required");
+      return;
+    }
+
+    try {
+      const changesetTools = createChangesetTools();
+
+      return await executeChangesetTool(
+        changesetTools.tools.fileContentAtHead,
+        { filePath },
+        "manual-file-content-at-head",
       );
     } catch (error) {
       await handleChangesetError(reply, error);
