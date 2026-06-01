@@ -2,7 +2,7 @@
  * Author: Jamius Siam
  * Since: 30/05/2026
  */
-import { useMemo, useState, type JSX } from "react";
+import { useMemo, useRef, useState, type JSX, type KeyboardEvent, type PointerEvent } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -58,6 +58,18 @@ const fileChangeConfig: Record<DiffChangeType, FileChangeConfig> = {
 };
 
 const TREE_INDENT_WIDTH = 16;
+const SIDEBAR_MIN_WIDTH = 300;
+const SIDEBAR_MAX_WIDTH = 600;
+const SIDEBAR_RESIZE_STEP = 16;
+
+type SidebarResizeState = {
+  startX: number;
+  startWidth: number;
+};
+
+const clampSidebarWidth = (width: number): number => {
+  return Math.min(Math.max(width, SIDEBAR_MIN_WIDTH), SIDEBAR_MAX_WIDTH);
+};
 
 const createTreeItem = (id: string, name: string, path: string): FileTreeItem => ({
   id,
@@ -210,8 +222,48 @@ const Sidebar = (): JSX.Element => {
   const setSelectedFileId = useDiffViewStore((state) => state.setSelectedFileId);
 
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => new Set());
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN_WIDTH);
+  const resizeStateRef = useRef<SidebarResizeState | null>(null);
 
   const fileTree = useMemo(() => buildFileTree(diffFiles), [diffFiles]);
+
+  const startSidebarResize = (event: PointerEvent<HTMLDivElement>): void => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    resizeStateRef.current = {
+      startX: event.clientX,
+      startWidth: sidebarWidth,
+    };
+  };
+
+  const resizeSidebar = (event: PointerEvent<HTMLDivElement>): void => {
+    if (!resizeStateRef.current) {
+      return;
+    }
+
+    const nextWidth =
+      resizeStateRef.current.startWidth + event.clientX - resizeStateRef.current.startX;
+    setSidebarWidth(clampSidebarWidth(nextWidth));
+  };
+
+  const stopSidebarResize = (event: PointerEvent<HTMLDivElement>): void => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    resizeStateRef.current = null;
+  };
+
+  const resizeSidebarWithKeyboard = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.shiftKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault();
+
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      setSidebarWidth((currentWidth) =>
+        clampSidebarWidth(currentWidth + SIDEBAR_RESIZE_STEP * direction),
+      );
+    }
+  };
 
   const toggleFolder = (folderId: string): void => {
     setCollapsedFolderIds((currentFolderIds) => {
@@ -228,7 +280,9 @@ const Sidebar = (): JSX.Element => {
   };
 
   return (
-    <div className="flex min-w-[300px] max-w-[300px] flex-col rounded bg-white px-4 pb-3 pt-4 shadow-md">
+    <div
+      className="relative flex flex-none flex-col rounded bg-white px-4 pb-3 pt-4 shadow-md"
+      style={{ width: sidebarWidth, minWidth: SIDEBAR_MIN_WIDTH, maxWidth: SIDEBAR_MAX_WIDTH }}>
       <div className="border-b border-muted pb-3">
         <h1 className="font-heading text-lg font-semibold">Changeset</h1>
         <p className="text-xs text-muted-foreground">{diffFiles.length} changed files</p>
@@ -245,6 +299,22 @@ const Sidebar = (): JSX.Element => {
           )}
         </div>
       </div>
+
+      <div
+        role="separator"
+        aria-label="Resize sidebar"
+        aria-orientation="vertical"
+        aria-valuemin={SIDEBAR_MIN_WIDTH}
+        aria-valuemax={SIDEBAR_MAX_WIDTH}
+        aria-valuenow={sidebarWidth}
+        tabIndex={0}
+        className="absolute bottom-0 right-0 top-0 w-2 cursor-col-resize touch-none rounded-r outline-none transition-colors hover:bg-nav-active/50 focus-visible:bg-nav-active/50"
+        onKeyDown={resizeSidebarWithKeyboard}
+        onPointerDown={startSidebarResize}
+        onPointerMove={resizeSidebar}
+        onPointerUp={stopSidebarResize}
+        onPointerCancel={stopSidebarResize}
+      />
     </div>
   );
 };
