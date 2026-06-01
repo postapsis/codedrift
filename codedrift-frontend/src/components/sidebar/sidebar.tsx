@@ -137,7 +137,7 @@ const renderTreeItems = (
     const indentLines = Array.from({ length: level }, (_, index) => (
       <span
         key={`${item.id}-line-${index}`}
-        className="absolute bottom-0 top-0 w-px border-l border-dashed border-foreground/30"
+        className="absolute bottom-0 top-0 w-px border-l border-dashed border-foreground/15"
         style={{ left: `${index * TREE_INDENT_WIDTH + TREE_INDENT_WIDTH / 2 - 3}px` }}
       />
     ));
@@ -154,13 +154,13 @@ const renderTreeItems = (
             type="button"
             aria-expanded={!isCollapsed}
             className={cn(
-              "relative flex h-7 w-full min-w-max items-center gap-1 rounded pr-3 text-left text-xs",
-              "text-foreground hover:bg-nav-active/40",
+              "relative flex h-6 w-full min-w-max items-center gap-1 rounded pr-3 text-left text-xs",
+              "text-foreground/70 hover:bg-nav-active/40",
             )}
             style={{ paddingLeft: `${level * TREE_INDENT_WIDTH}px` }}
             onClick={() => onToggleFolder(item.id)}>
-            <ChevronIcon className="size-3 shrink-0 text-foreground/80" strokeWidth={1.8} />
-            <FolderIcon className="size-4 shrink-0 text-foreground/80" strokeWidth={1.8} />
+            <ChevronIcon className="size-3 shrink-0 text-foreground/70" strokeWidth={1.8} />
+            <FolderIcon className="size-4 shrink-0 text-foreground/70" strokeWidth={1.8} />
             <span className="whitespace-nowrap">{item.name}</span>
           </button>
         </div>,
@@ -190,8 +190,8 @@ const renderTreeItems = (
           aria-label={`${config.label}: ${getFileTitle(item.file)}`}
           aria-pressed={isSelected}
           className={cn(
-            "relative flex h-7 w-full min-w-max items-center gap-1.5 rounded px-3 text-left text-xs",
-            "text-foreground hover:bg-nav-active/40",
+            "relative flex h-6 w-full min-w-max items-center gap-1.5 rounded px-3 text-left text-xs",
+            "text-foreground/90 hover:bg-nav-active/40",
             isSelected && "bg-nav-active/40",
           )}
           style={{ paddingLeft: `${level * TREE_INDENT_WIDTH + TREE_INDENT_WIDTH}px` }}
