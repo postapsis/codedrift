@@ -35,6 +35,7 @@ const View = (): JSX.Element => {
         <div className="border-b border-border bg-background px-3 py-2 font-mono text-xs text-foreground/80">
           {getDiffFileDisplayPath(selectedFile)}
         </div>
+        {/* Please see main.css for .diff-style-root font size override */}
         <DiffView
           data={{
             oldFile: {
@@ -49,7 +50,6 @@ const View = (): JSX.Element => {
             },
             hunks: [selectedFile.rawDiff],
           }}
-          diffViewFontSize={13}
           diffViewHighlight
           diffViewMode={DiffModeEnum.SplitGitLab}
           diffViewTheme="light"

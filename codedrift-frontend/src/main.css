@@ -126,12 +126,6 @@
     --breakpoint-2k: 2000px;
 }
 
-@media (min-width: theme(--breakpoint-2k)) {
-    :root {
-        font-size: 14px;
-    }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -144,5 +138,21 @@
     }
   html {
     @apply font-sans;
+    }
+}
+
+/* Overrides */
+
+.diff-style-root {
+    --diff-font-size--: 11px !important;
+}
+
+@media (min-width: theme(--breakpoint-2k)) {
+    :root {
+        font-size: 14px;
+    }
+
+    .diff-style-root {
+        --diff-font-size--: 13px !important;
     }
 }
