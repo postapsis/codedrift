@@ -148,11 +148,7 @@
 }
 
 @media (min-width: theme(--breakpoint-2k)) {
-    :root {
-        font-size: 14px;
-    }
-
     .diff-style-root {
-        --diff-font-size--: 13px !important;
+        --diff-font-size--: 12px !important;
     }
 }
