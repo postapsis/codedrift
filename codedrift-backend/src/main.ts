@@ -21,30 +21,23 @@ const fastify = Fastify({
 });
 
 type FilePathRequestBody = {
-  filePath?: unknown;
+  filePath?: string;
 };
 
+// TODO: Temporary to check tool functionalities, will remove later
 const getToolExecutionOptions = (toolCallId: string): ToolExecutionOptions => ({
   toolCallId,
   messages: [],
 });
 
+// TODO: Temporary to check tool functionalities, will remove later
 const createChangesetTools = (): ChangesetTools => {
   return new ChangesetTools(REPOSITORY_PATH, DIFF_BASE_REF, DIFF_HEAD_REF);
 };
 
-const getRequiredStringBodyField = (body: unknown, fieldName: string): string | null => {
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return null;
-  }
-
-  const value = (body as Record<string, unknown>)[fieldName];
-
-  if (typeof value !== "string" || !value.trim()) {
-    return null;
-  }
-
-  return value;
+// TODO: Temporary to check tool functionalities, will remove later
+const getRequiredStringBodyField = (body: unknown, fieldName: string): string => {
+  return (body as Record<string, string>)[fieldName]!;
 };
 
 const sendBadRequest = async (reply: FastifyReply, message: string): Promise<void> => {
@@ -82,10 +75,6 @@ fastify.addHook("onRequest", async (request, reply): Promise<void> => {
   }
 });
 
-fastify.get("/", async function handler() {
-  return { hello: "world" };
-});
-
 fastify.get("/diff", async (): Promise<DiffFileData[]> => {
   return DiffService.getDiffFiles();
 });
@@ -100,11 +89,6 @@ fastify.post<{ Body: FilePathRequestBody }>(
   "/tools/changeset/hunk",
   async (request, reply): Promise<ChangesetFileHunk | void> => {
     const filePath = getRequiredStringBodyField(request.body, "filePath");
-
-    if (!filePath) {
-      await sendBadRequest(reply, "filePath is required");
-      return;
-    }
 
     try {
       const changesetTools = createChangesetTools();
@@ -125,11 +109,6 @@ fastify.post<{ Body: FilePathRequestBody }>(
   async (request, reply): Promise<ChangesetFileContent | void> => {
     const filePath = getRequiredStringBodyField(request.body, "filePath");
 
-    if (!filePath) {
-      await sendBadRequest(reply, "filePath is required");
-      return;
-    }
-
     try {
       const changesetTools = createChangesetTools();
 
@@ -148,11 +127,6 @@ fastify.post<{ Body: FilePathRequestBody }>(
   "/tools/changeset/file-content-at-head",
   async (request, reply): Promise<ChangesetFileContent | void> => {
     const filePath = getRequiredStringBodyField(request.body, "filePath");
-
-    if (!filePath) {
-      await sendBadRequest(reply, "filePath is required");
-      return;
-    }
 
     try {
       const changesetTools = createChangesetTools();
