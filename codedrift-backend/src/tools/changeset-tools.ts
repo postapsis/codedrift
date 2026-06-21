@@ -7,6 +7,12 @@ import { tool, type Tool } from "ai";
 import { simpleGit, type SimpleGit } from "simple-git";
 import { z } from "zod";
 
+export interface Changeset {
+  name: string;
+  description: string;
+  filesPaths: string[];
+}
+
 type EmptyToolInput = Record<string, never>;
 
 type FilePathToolInput = {
@@ -48,11 +54,23 @@ const filePathToolInputSchema = z
   })
   .strict();
 
+const changesetToolInputSchema = z
+  .object({
+    name: z.string().min(1).describe("Human-readable changeset name."),
+    description: z.string().describe("What this changeset groups together."),
+    filesPaths: z
+      .array(z.string().min(1))
+      .min(1)
+      .describe("Repository file paths, relative to the configured repository root."),
+  })
+  .strict();
+
 export type ChangesetToolSet = {
   allCommits: Tool<EmptyToolInput, CommitSummary[]>;
   hunkForFile: Tool<FilePathToolInput, FileHunk>;
   fileContentAtBase: Tool<FilePathToolInput, FileContent>;
   fileContentAtHead: Tool<FilePathToolInput, FileContent>;
+  addChangeset: Tool<Changeset, Changeset>;
 };
 
 export class ChangesetInputError extends Error {}
@@ -63,6 +81,7 @@ export class ChangesetTools {
   readonly headRef: string;
   readonly git: SimpleGit;
   readonly tools: ChangesetToolSet;
+  private readonly changesets: Changeset[] = [];
 
   constructor(repoPath: string, baseRef: string, headRef: string) {
     this.repoPath = path.resolve(repoPath);
@@ -93,6 +112,13 @@ export class ChangesetTools {
         execute: ({ filePath }): Promise<FileContent> =>
           this.getFileContentAtHead(filePath),
       }),
+      addChangeset: tool({
+        description:
+          "Add a changeset (name, description, file paths) to the in-memory list. " +
+          "Throws if any file path already belongs to another changeset.",
+        inputSchema: changesetToolInputSchema,
+        execute: (changeset): Promise<Changeset> => this.addChangeset(changeset),
+      }),
     };
   }
 
@@ -114,6 +140,39 @@ export class ChangesetTools {
     return {
       hunk: diff,
     };
+  }
+
+  addChangeset(changeset: Changeset): Promise<Changeset> {
+    const filesPaths = changeset.filesPaths.map((filePath) =>
+      this.getRepoRelativePath(filePath),
+    );
+
+    const existingFilePaths = new Set(
+      this.changesets.flatMap((existing) => existing.filesPaths),
+    );
+
+    const seenFilePaths = new Set<string>();
+
+    for (const filePath of filesPaths) {
+      if (seenFilePaths.has(filePath)) {
+        throw new ChangesetInputError(
+          `File path "${filePath}" is listed more than once in the changeset`,
+        );
+      }
+
+      if (existingFilePaths.has(filePath)) {
+        throw new ChangesetInputError(
+          `File path "${filePath}" already belongs to another changeset`,
+        );
+      }
+
+      seenFilePaths.add(filePath);
+    }
+
+    const normalizedChangeset: Changeset = { ...changeset, filesPaths };
+    this.changesets.push(normalizedChangeset);
+
+    return Promise.resolve(normalizedChangeset);
   }
 
   getFileContentAtBase(filePath: string): Promise<FileContent> {

@@ -9,6 +9,7 @@ import type { DiffFileData } from "./@types/diff.ts";
 import {
   ChangesetInputError,
   ChangesetTools,
+  type Changeset,
   type CommitSummary,
   type FileContent,
   type FileHunk,
@@ -135,6 +136,23 @@ fastify.post<{ Body: FilePathRequestBody }>(
         changesetTools.tools.fileContentAtHead,
         { filePath },
         "manual-file-content-at-head",
+      );
+    } catch (error) {
+      await handleChangesetError(reply, error);
+    }
+  },
+);
+
+fastify.post<{ Body: Changeset }>(
+  "/tools/changeset/add",
+  async (request, reply): Promise<Changeset | void> => {
+    try {
+      const changesetTools = createChangesetTools();
+
+      return await executeChangesetTool(
+        changesetTools.tools.addChangeset,
+        request.body,
+        "manual-add-changeset",
       );
     } catch (error) {
       await handleChangesetError(reply, error);
