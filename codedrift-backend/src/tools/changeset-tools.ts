@@ -13,17 +13,17 @@ type FilePathToolInput = {
   filePath: string;
 };
 
-export type ChangesetCommitSummary = {
+export type CommitSummary = {
   message: string;
   date: string;
   changedFilePaths: string[];
 };
 
-export type ChangesetFileHunk = {
+export type FileHunk = {
   hunk: string;
 };
 
-export type ChangesetFileContent = {
+export type FileContent = {
   filePath: string;
   content: string;
 };
@@ -49,10 +49,10 @@ const filePathToolInputSchema = z
   .strict();
 
 export type ChangesetToolSet = {
-  allCommits: Tool<EmptyToolInput, ChangesetCommitSummary[]>;
-  hunkForFile: Tool<FilePathToolInput, ChangesetFileHunk>;
-  fileContentAtBase: Tool<FilePathToolInput, ChangesetFileContent>;
-  fileContentAtHead: Tool<FilePathToolInput, ChangesetFileContent>;
+  allCommits: Tool<EmptyToolInput, CommitSummary[]>;
+  hunkForFile: Tool<FilePathToolInput, FileHunk>;
+  fileContentAtBase: Tool<FilePathToolInput, FileContent>;
+  fileContentAtHead: Tool<FilePathToolInput, FileContent>;
 };
 
 export class ChangesetInputError extends Error {}
@@ -74,29 +74,29 @@ export class ChangesetTools {
         description:
           "List commits between base and head refs with message, date, and changed repository file paths.",
         inputSchema: emptyToolInputSchema,
-        execute: (): Promise<ChangesetCommitSummary[]> => this.getAllCommits(),
+        execute: (): Promise<CommitSummary[]> => this.getAllCommits(),
       }),
       hunkForFile: tool({
         description: "Return git diff hunk for a repository file path between base and head refs.",
         inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<ChangesetFileHunk> => this.getHunkForFile(filePath),
+        execute: ({ filePath }): Promise<FileHunk> => this.getHunkForFile(filePath),
       }),
       fileContentAtBase: tool({
         description: "Return full file content for a repository file path at the base ref.",
         inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<ChangesetFileContent> =>
+        execute: ({ filePath }): Promise<FileContent> =>
           this.getFileContentAtBase(filePath),
       }),
       fileContentAtHead: tool({
         description: "Return full file content for a repository file path at the head ref.",
         inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<ChangesetFileContent> =>
+        execute: ({ filePath }): Promise<FileContent> =>
           this.getFileContentAtHead(filePath),
       }),
     };
   }
 
-  async getAllCommits(): Promise<ChangesetCommitSummary[]> {
+  async getAllCommits(): Promise<CommitSummary[]> {
     const commits = await this.getCommitsWithChangedFiles();
 
     return commits.map(({ message, date, changedFilePaths }) => ({
@@ -106,7 +106,7 @@ export class ChangesetTools {
     }));
   }
 
-  async getHunkForFile(filePath: string): Promise<ChangesetFileHunk> {
+  async getHunkForFile(filePath: string): Promise<FileHunk> {
     const relativePath = this.getRepoRelativePath(filePath);
 
     const diff = await this.git.diff([this.baseRef, this.headRef, "--", relativePath]);
@@ -116,18 +116,18 @@ export class ChangesetTools {
     };
   }
 
-  getFileContentAtBase(filePath: string): Promise<ChangesetFileContent> {
+  getFileContentAtBase(filePath: string): Promise<FileContent> {
     return this.getFileContentAtRef(filePath, this.baseRef);
   }
 
-  getFileContentAtHead(filePath: string): Promise<ChangesetFileContent> {
+  getFileContentAtHead(filePath: string): Promise<FileContent> {
     return this.getFileContentAtRef(filePath, this.headRef);
   }
 
   private async getFileContentAtRef(
     filePath: string,
     revision: string,
-  ): Promise<ChangesetFileContent> {
+  ): Promise<FileContent> {
     const relativePath = this.getRepoRelativePath(filePath);
     const content = await this.git.raw(["show", `${revision}:${relativePath}`]);
 

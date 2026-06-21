@@ -9,9 +9,9 @@ import type { DiffFileData } from "./@types/diff.ts";
 import {
   ChangesetInputError,
   ChangesetTools,
-  type ChangesetCommitSummary,
-  type ChangesetFileContent,
-  type ChangesetFileHunk,
+  type CommitSummary,
+  type FileContent,
+  type FileHunk,
 } from "./tools/changeset-tools.ts";
 import { DIFF_BASE_REF, DIFF_HEAD_REF, REPOSITORY_PATH } from "./utils/temp-repo-info.ts";
 import type { Tool, ToolExecutionOptions } from "ai";
@@ -79,7 +79,7 @@ fastify.get("/diff", async (): Promise<DiffFileData[]> => {
   return DiffService.getDiffFiles();
 });
 
-fastify.post("/tools/changeset/all-commits", async (): Promise<ChangesetCommitSummary[]> => {
+fastify.post("/tools/changeset/all-commits", async (): Promise<CommitSummary[]> => {
   const changesetTools = createChangesetTools();
 
   return executeChangesetTool(changesetTools.tools.allCommits, {}, "manual-all-commits");
@@ -87,7 +87,7 @@ fastify.post("/tools/changeset/all-commits", async (): Promise<ChangesetCommitSu
 
 fastify.post<{ Body: FilePathRequestBody }>(
   "/tools/changeset/hunk",
-  async (request, reply): Promise<ChangesetFileHunk | void> => {
+  async (request, reply): Promise<FileHunk | void> => {
     const filePath = getRequiredStringBodyField(request.body, "filePath");
 
     try {
@@ -106,7 +106,7 @@ fastify.post<{ Body: FilePathRequestBody }>(
 
 fastify.post<{ Body: FilePathRequestBody }>(
   "/tools/changeset/file-content-at-base",
-  async (request, reply): Promise<ChangesetFileContent | void> => {
+  async (request, reply): Promise<FileContent | void> => {
     const filePath = getRequiredStringBodyField(request.body, "filePath");
 
     try {
@@ -125,7 +125,7 @@ fastify.post<{ Body: FilePathRequestBody }>(
 
 fastify.post<{ Body: FilePathRequestBody }>(
   "/tools/changeset/file-content-at-head",
-  async (request, reply): Promise<ChangesetFileContent | void> => {
+  async (request, reply): Promise<FileContent | void> => {
     const filePath = getRequiredStringBodyField(request.body, "filePath");
 
     try {
