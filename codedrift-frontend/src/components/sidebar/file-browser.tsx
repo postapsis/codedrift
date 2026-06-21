@@ -171,8 +171,8 @@ const renderTreeItems = (
             )}
             style={{ paddingLeft: `${level * TREE_INDENT_WIDTH}px` }}
             onClick={() => onToggleFolder(item.id)}>
-            <ChevronIcon className="size-3 shrink-0 text-foreground/70" strokeWidth={1.8} />
-            <FolderIcon className="size-4 shrink-0 text-foreground/70" strokeWidth={1.8} />
+            <ChevronIcon className="size-3 shrink-0 text-foreground/90" strokeWidth={1.8} />
+            <FolderIcon className="size-4 shrink-0 text-foreground/90" strokeWidth={1.8} />
             <span className="whitespace-nowrap">{item.name}</span>
           </button>
         </div>,
