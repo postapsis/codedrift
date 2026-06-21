@@ -19,6 +19,10 @@ export type ChangesetCommitSummary = {
   changedFilePaths: string[];
 };
 
+export type ChangesetFileHunk = {
+  hunk: string;
+};
+
 export type ChangesetFileContent = {
   filePath: string;
   content: string;
@@ -46,7 +50,7 @@ const filePathToolInputSchema = z
 
 export type ChangesetToolSet = {
   allCommits: Tool<EmptyToolInput, ChangesetCommitSummary[]>;
-  hunkForFile: Tool<FilePathToolInput, string>;
+  hunkForFile: Tool<FilePathToolInput, ChangesetFileHunk>;
   fileContentAtBase: Tool<FilePathToolInput, ChangesetFileContent>;
   fileContentAtHead: Tool<FilePathToolInput, ChangesetFileContent>;
 };
@@ -75,7 +79,7 @@ export class ChangesetTools {
       hunkForFile: tool({
         description: "Return git diff hunk for a repository file path between base and head refs.",
         inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<string> => this.getHunkForFile(filePath),
+        execute: ({ filePath }): Promise<ChangesetFileHunk> => this.getHunkForFile(filePath),
       }),
       fileContentAtBase: tool({
         description: "Return full file content for a repository file path at the base ref.",
@@ -102,10 +106,14 @@ export class ChangesetTools {
     }));
   }
 
-  async getHunkForFile(filePath: string): Promise<string> {
+  async getHunkForFile(filePath: string): Promise<ChangesetFileHunk> {
     const relativePath = this.getRepoRelativePath(filePath);
 
-    return this.git.diff([this.baseRef, this.headRef, "--", relativePath]);
+    const diff = await this.git.diff([this.baseRef, this.headRef, "--", relativePath]);
+
+    return {
+      hunk: diff,
+    };
   }
 
   getFileContentAtBase(filePath: string): Promise<ChangesetFileContent> {

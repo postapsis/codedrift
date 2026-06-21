@@ -11,6 +11,7 @@ import {
   ChangesetTools,
   type ChangesetCommitSummary,
   type ChangesetFileContent,
+  type ChangesetFileHunk,
 } from "./tools/changeset-tools.ts";
 import { DIFF_BASE_REF, DIFF_HEAD_REF, REPOSITORY_PATH } from "./utils/temp-repo-info.ts";
 import type { Tool, ToolExecutionOptions } from "ai";
@@ -97,7 +98,7 @@ fastify.post("/tools/changeset/all-commits", async (): Promise<ChangesetCommitSu
 
 fastify.post<{ Body: FilePathRequestBody }>(
   "/tools/changeset/hunk",
-  async (request, reply): Promise<string | void> => {
+  async (request, reply): Promise<ChangesetFileHunk | void> => {
     const filePath = getRequiredStringBodyField(request.body, "filePath");
 
     if (!filePath) {
