@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{BASE_URL}}/tools/changeset/hunks"
+  url: "{{BASE_URL}}/tools/changeset/hunk"
   headers:
     - name: Content-Type
       value: application/json

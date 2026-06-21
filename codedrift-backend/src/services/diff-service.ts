@@ -145,10 +145,6 @@ export class DiffService {
     return Promise.all(diffFiles.map((diffFile) => DiffService.attachFileContent(git, diffFile)));
   }
 
-  static getDiffContent(): Promise<string> {
-    return DiffService.fetchDiffContent(REPOSITORY_PATH);
-  }
-
   static getDiffFiles(): Promise<DiffFileData[]> {
     return DiffService.fetchDiffFiles(REPOSITORY_PATH);
   }

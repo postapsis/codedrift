@@ -14,14 +14,9 @@ type FilePathToolInput = {
 };
 
 export type ChangesetCommitSummary = {
-  shortHash: string;
   message: string;
   date: string;
   changedFilePaths: string[];
-};
-
-export type ChangesetFileHunk = {
-  hunk: string;
 };
 
 export type ChangesetFileContent = {
@@ -30,8 +25,6 @@ export type ChangesetFileContent = {
 };
 
 type CommitMetadata = {
-  hash: string;
-  shortHash: string;
   message: string;
   date: string;
 };
@@ -53,7 +46,7 @@ const filePathToolInputSchema = z
 
 export type ChangesetToolSet = {
   allCommits: Tool<EmptyToolInput, ChangesetCommitSummary[]>;
-  hunksForFile: Tool<FilePathToolInput, ChangesetFileHunk[]>;
+  hunkForFile: Tool<FilePathToolInput, string>;
   fileContentAtBase: Tool<FilePathToolInput, ChangesetFileContent>;
   fileContentAtHead: Tool<FilePathToolInput, ChangesetFileContent>;
 };
@@ -79,10 +72,10 @@ export class ChangesetTools {
         inputSchema: emptyToolInputSchema,
         execute: (): Promise<ChangesetCommitSummary[]> => this.getAllCommits(),
       }),
-      hunksForFile: tool({
-        description: "Return git diff hunks for a repository file path between base and head refs.",
+      hunkForFile: tool({
+        description: "Return git diff hunk for a repository file path between base and head refs.",
         inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<ChangesetFileHunk[]> => this.getHunksForFile(filePath),
+        execute: ({ filePath }): Promise<string> => this.getHunkForFile(filePath),
       }),
       fileContentAtBase: tool({
         description: "Return full file content for a repository file path at the base ref.",
@@ -102,19 +95,17 @@ export class ChangesetTools {
   async getAllCommits(): Promise<ChangesetCommitSummary[]> {
     const commits = await this.getCommitsWithChangedFiles();
 
-    return commits.map(({ shortHash, message, date, changedFilePaths }) => ({
-      shortHash,
+    return commits.map(({ message, date, changedFilePaths }) => ({
       message,
       date,
       changedFilePaths,
     }));
   }
 
-  async getHunksForFile(filePath: string): Promise<ChangesetFileHunk[]> {
+  async getHunkForFile(filePath: string): Promise<string> {
     const relativePath = this.getRepoRelativePath(filePath);
-    const diff = await this.git.diff([this.baseRef, this.headRef, "--", relativePath]);
 
-    return ChangesetTools.parseDiffHunks(diff);
+    return this.git.diff([this.baseRef, this.headRef, "--", relativePath]);
   }
 
   getFileContentAtBase(filePath: string): Promise<ChangesetFileContent> {
@@ -176,7 +167,7 @@ export class ChangesetTools {
       "log",
       this.getRange(),
       "--name-only",
-      "--pretty=format:%H%x1f%h%x1f%s%x1f%cI",
+      "--pretty=format:%s%x1f%cI",
     ]);
 
     return this.parseCommitLog(logOutput);
@@ -210,51 +201,14 @@ export class ChangesetTools {
     return commits;
   }
 
-  private static parseDiffHunks(diffContent: string): ChangesetFileHunk[] {
-    const normalizedDiff = diffContent.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
-
-    if (!normalizedDiff) {
-      return [];
-    }
-
-    const lines = normalizedDiff.endsWith("\n")
-      ? normalizedDiff.slice(0, -1).split("\n")
-      : normalizedDiff.split("\n");
-    const hunks: ChangesetFileHunk[] = [];
-    let currentHunkLines: string[] = [];
-
-    for (const line of lines) {
-      if (line.startsWith("@@ ")) {
-        if (currentHunkLines.length > 0) {
-          hunks.push({ hunk: currentHunkLines.join("\n") });
-        }
-
-        currentHunkLines = [line];
-        continue;
-      }
-
-      if (currentHunkLines.length > 0) {
-        currentHunkLines.push(line);
-      }
-    }
-
-    if (currentHunkLines.length > 0) {
-      hunks.push({ hunk: currentHunkLines.join("\n") });
-    }
-
-    return hunks;
-  }
-
   private static parseCommitMetadataLine(line: string): CommitMetadata | null {
-    const [hash, shortHash, message, date] = line.split("\u001f");
+    const [message, date] = line.split("\u001f");
 
-    if (!hash || !shortHash || !message || !date) {
+    if (!message || !date) {
       return null;
     }
 
     return {
-      hash,
-      shortHash,
       message,
       date,
     };
