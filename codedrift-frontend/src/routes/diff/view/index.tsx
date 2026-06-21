@@ -3,13 +3,12 @@
  * Since: 30/05/2026
  */
 import { type JSX, useEffect } from "react";
-import { DiffModeEnum, DiffView } from "@git-diff-view/react";
+import { DiffModeEnum, DiffView, setEnableFastDiffTemplate } from "@git-diff-view/react";
 import "@git-diff-view/react/styles/diff-view-pure.css";
 import { createFileRoute } from "@tanstack/react-router";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import { getDiffFileDisplayPath, getSelectedDiffFile } from "@/lib/diff-utils.ts";
-import { setEnableFastDiffTemplate } from "@git-diff-view/core";
 
 const View = (): JSX.Element => {
   const diffFiles = useDiffViewStore((state) => state.diffFiles);

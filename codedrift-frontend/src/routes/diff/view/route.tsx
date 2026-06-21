@@ -5,7 +5,7 @@
 import { useEffect, useMemo, type JSX } from "react";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import Sidebar from "@/components/sidebar/sidebar.tsx";
+import FileBrowser from "@/components/sidebar/file-browser.tsx";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import type { DiffFileData } from "@/@types/diff.ts";
@@ -53,7 +53,7 @@ const DiffViewLayout = (): JSX.Element => {
     <>
       {!isLoading && !errorMessage ? (
         <>
-          <Sidebar />
+          <FileBrowser />
           <div
             className={`flex-1 overflow-auto px-4 py-3 bg-white rounded shadow-md ${THIN_SCROLLBAR_CLASS}`}>
             <Outlet />
