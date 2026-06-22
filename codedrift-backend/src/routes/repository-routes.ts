@@ -4,13 +4,17 @@
  */
 import type { FastifyPluginAsync } from "fastify";
 import { RepositoryService } from "../services/repository-service.ts";
-import { saveRepository } from "../db/repository-store.ts";
+import { saveRepository, getRepositoryById } from "../db/repository-store.ts";
 import type { ApiResponse } from "../@types/api-response.ts";
 import type { Repository } from "../@types/repository.ts";
 
 type AddRepositoryBody = {
   repositoryName?: string;
   repositoryPath?: string;
+};
+
+type RepositoryBranchesParams = {
+  repositoryId: string;
 };
 
 export const repositoryRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
@@ -46,6 +50,22 @@ export const repositoryRoutes: FastifyPluginAsync = async (fastify): Promise<voi
 
         throw error;
       }
+    },
+  );
+
+  fastify.get<{ Params: RepositoryBranchesParams }>(
+    "/repository/:repositoryId/branches",
+    async (request, reply): Promise<ApiResponse<string[] | null>> => {
+      const repository = getRepositoryById(request.params.repositoryId);
+
+      if (!repository) {
+        reply.status(404);
+        return { success: false, message: "Repository not found", data: null };
+      }
+
+      const branches = await RepositoryService.getBranches(repository.path);
+
+      return { success: true, message: null, data: branches };
     },
   );
 };
