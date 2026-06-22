@@ -19,6 +19,10 @@ const insertStatement = db.prepare(
 
 const selectByIdStatement = db.prepare("SELECT * FROM repositories WHERE id = @id");
 
+const selectAllStatement = db.prepare("SELECT * FROM repositories ORDER BY id");
+
+const deleteStatement = db.prepare("DELETE FROM repositories WHERE id = @id");
+
 const mapRepositoryRow = (row: RepositoryRow): Repository => ({
   id: row.id,
   name: row.name,
@@ -37,4 +41,14 @@ export const getRepositoryById = (id: string): Repository | null => {
   const row = selectByIdStatement.get({ id }) as RepositoryRow | undefined;
 
   return row ? mapRepositoryRow(row) : null;
+};
+
+export const listRepositories = (): Repository[] => {
+  const rows = selectAllStatement.all() as RepositoryRow[];
+
+  return rows.map(mapRepositoryRow);
+};
+
+export const deleteRepository = (id: string): boolean => {
+  return deleteStatement.run({ id }).changes > 0;
 };

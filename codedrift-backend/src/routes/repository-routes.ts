@@ -4,7 +4,12 @@
  */
 import type { FastifyPluginAsync } from "fastify";
 import { RepositoryService } from "../services/repository-service.ts";
-import { saveRepository, getRepositoryById } from "../db/repository-store.ts";
+import {
+  saveRepository,
+  getRepositoryById,
+  listRepositories,
+  deleteRepository,
+} from "../db/repository-store.ts";
 import type { ApiResponse } from "../@types/api-response.ts";
 import type { Repository } from "../@types/repository.ts";
 
@@ -13,7 +18,7 @@ type AddRepositoryBody = {
   repositoryPath?: string;
 };
 
-type RepositoryBranchesParams = {
+type RepositoryIdParams = {
   repositoryId: string;
 };
 
@@ -53,7 +58,14 @@ export const repositoryRoutes: FastifyPluginAsync = async (fastify): Promise<voi
     },
   );
 
-  fastify.get<{ Params: RepositoryBranchesParams }>(
+  fastify.get(
+    "/repositories",
+    async (): Promise<ApiResponse<Repository[]>> => {
+      return { success: true, message: null, data: listRepositories() };
+    },
+  );
+
+  fastify.get<{ Params: RepositoryIdParams }>(
     "/repository/:repositoryId/branches",
     async (request, reply): Promise<ApiResponse<string[] | null>> => {
       const repository = getRepositoryById(request.params.repositoryId);
@@ -66,6 +78,20 @@ export const repositoryRoutes: FastifyPluginAsync = async (fastify): Promise<voi
       const branches = await RepositoryService.getBranches(repository.path);
 
       return { success: true, message: null, data: branches };
+    },
+  );
+
+  fastify.delete<{ Params: RepositoryIdParams }>(
+    "/repository/:repositoryId",
+    async (request, reply): Promise<ApiResponse<null>> => {
+      const deleted = deleteRepository(request.params.repositoryId);
+
+      if (!deleted) {
+        reply.status(404);
+        return { success: false, message: "Repository not found", data: null };
+      }
+
+      return { success: true, message: null, data: null };
     },
   );
 };

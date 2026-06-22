@@ -15,7 +15,7 @@ const fastify = Fastify({
 
 fastify.addHook("onRequest", async (request, reply): Promise<void> => {
   reply.header("Access-Control-Allow-Origin", "*");
-  reply.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  reply.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   reply.header("Access-Control-Allow-Headers", "Content-Type");
 
   if (request.method === "OPTIONS") {
