@@ -25,3 +25,4 @@ Here are some rules for the project:
     12. Move reused types in the `@types` folder.
     13. If people usually use a specific library for a specific task, prompt the user if they want to use it. (e.g.,
         form validation with Zod)
+   14. Create/update OpneCollection files at `api-collection/Codedrift` for newly created/updated endpoints.

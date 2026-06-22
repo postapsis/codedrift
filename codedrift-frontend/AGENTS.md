@@ -1,15 +1,18 @@
 This is an open source fully client-side application about code management/code intelligence app called `Codedrift`.
 
 ## Techstack
+
 1. React
-2. Tanstack Router
-3. Typescript
-4. Tailwind CSS
-5. Shadcn UI
-6. Zod
-7. Vite
+2. Typescript
+3. Tailwind CSS
+4. Shadcn UI
+5. Tanstack Router
+6. Tanstack Query
+7. Zod
+8. Vite
 
 ## Rules
+
 Here are some rules for the project:
 
 1. After your changes, compile with `tsc` and run prettier to format the code.
@@ -30,3 +33,6 @@ Here are some rules for the project:
     13. If people usually use a specific library for a specific task, prompt the user if they want to use it. (e.g.,
         form validation with Zod)
     14. If variables can be moved outside the component, do so.
+    15. Use Zod for form validation.
+    16. Use Zustand for state management.
+    17. Use Tanstack Query for data fetching/mutations.
