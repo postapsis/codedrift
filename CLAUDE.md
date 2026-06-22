@@ -16,7 +16,7 @@ Key rules from those files worth repeating: don't install packages without expli
 
 Codedrift is a code-intelligence / diff-review app. There is **no root `package.json`** — the two apps are developed and run independently from their own directories.
 
-- `codedrift-backend/` — Node + Fastify + TypeScript API. Reads a target git repo via `simple-git`, computes diffs, and exposes both an HTTP `/diff` endpoint and AI tool endpoints.
+- `codedrift-backend/` — Node + Fastify + TypeScript API. Reads a target git repo via `simple-git`, computes diffs (`GET /diff`), registers repositories (`POST /addRepository`), and persists them in a local SQLite database (`better-sqlite3`).
 - `codedrift-frontend/` — React 19 + Vite + TanStack Router/Query + Tailwind v4 + Shadcn UI. Renders the diff review UI.
 - `api-collection/Codedrift/` — Bruno (OpenCollection) API collection; keep in sync with backend endpoints.
 
@@ -38,12 +38,14 @@ Codedrift is a code-intelligence / diff-review app. There is **no root `package.
 
 ## Architecture & data flow
 
-The backend operates on a **live git repository on disk** — there is no database or persistence layer. The whole app is stateless: each request re-runs git operations.
+The backend operates on a **live git repository on disk**: diff/git operations are stateless and re-run per request. Registered repositories are persisted in a local **SQLite** database (`better-sqlite3`) at `~/.config/codedrift/codedrift.db`, opened at startup by `src/db/database.ts` — which creates the config dir, sets the `journal_mode=WAL` / `foreign_keys=ON` / `busy_timeout=5000` pragmas, and creates the `repositories` table. Data access goes through small stores in `src/db/` (e.g. `repository-store.ts`).
 
 1. The target repo and refs being compared are **hardcoded** in `codedrift-backend/src/utils/temp-repo-info.ts` (`REPOSITORY_PATH`, `DIFF_BASE_REF`, `DIFF_HEAD_REF`). This is temporary scaffolding — the `/diff/select` frontend route is the eventual place to choose branches. Update this file to point at a different repo/refs.
 2. `src/services/diff-service.ts` shells git through `simple-git`, parses raw diff output, normalizes paths, classifies each file (added / deleted / moved / changed), and fetches full file content at base and head. Shared shapes live in `src/@types/diff.ts` (`DiffFileData`, `DiffChangeType`).
-3. `src/main.ts` is the Fastify entry point (CORS open). `GET /diff` returns the full `DiffFileData[]`.
-4. `src/tools/changeset-tools.ts` wraps git operations as **AI tools** (via the `ai` SDK `tool()` helper) — list commits, get hunks, get file content at base/head. These are exposed under `POST /tools/changeset/*` and are validated to only accept repo-relative paths.
+3. `src/main.ts` is the Fastify entry point (CORS open). At startup it opens the SQLite DB (`import "./db/database.ts"`), serves `GET /diff` (raw `DiffFileData[]`, unwrapped), and registers per-resource route plugins via `fastify.register`.
+4. **Routes** live in `src/routes/` as Fastify plugins (`FastifyPluginAsync`) — e.g. `repository-routes.ts` exports `repositoryRoutes`, registered in `main.ts`. `POST /addRepository` validates that the body `repositoryPath` is an absolute git repo (`src/services/repository-service.ts`, via `simple-git` `checkIsRepo`) and persists `(repositoryName, path)` to the `repositories` table through `src/db/repository-store.ts` (the `path` column is `UNIQUE`, so duplicates return 409).
+5. New endpoints respond with the `ApiResponse<T>` wrapper `{ success, message, data }` from `src/@types/api-response.ts`; the legacy `GET /diff` stays unwrapped.
+6. `src/tools/changeset-tools.ts` still wraps git operations as `ai`-SDK tools (list commits, hunks, file content at base/head), but the former `POST /tools/changeset/*` HTTP endpoints have been removed — the file is currently not wired into the server.
 
 On the frontend:
 1. TanStack Router uses **file-based routing** — routes live in `src/routes/`, and `src/routeTree.gen.ts` is **auto-generated** by `@tanstack/router-plugin` (do not edit by hand). Main routes: `/`, `/diff/select` (placeholder for branch selection), `/diff/view` (the main diff viewer).

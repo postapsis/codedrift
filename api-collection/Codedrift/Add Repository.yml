@@ -13,7 +13,8 @@ http:
     type: json
     data: |-
       {
-        "repositoryPath": "/home/jamius19/projects/flightdrift"
+        "repositoryName": "Codedrift",
+        "repositoryPath": "/home/jamius19/projects/codedrift"
       }
   auth: inherit
 

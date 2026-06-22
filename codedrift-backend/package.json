@@ -23,6 +23,7 @@
   "description": "",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.9.1",
     "eslint": "^10.4.1",
     "globals": "^17.6.0",

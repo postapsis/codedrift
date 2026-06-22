@@ -3,6 +3,7 @@
  * Since: 30/05/2026
  */
 import "dotenv/config";
+import "./db/database.ts";
 import Fastify from "fastify";
 import { DiffService } from "./services/diff-service.ts";
 import { repositoryRoutes } from "./routes/repository-routes.ts";
