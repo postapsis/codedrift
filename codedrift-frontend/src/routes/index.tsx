@@ -11,8 +11,8 @@ const Index = (): JSX.Element => {
     <div className="w-full h-full px-4 py-3 flex flex-col justify-center items-center gap-2 bg-white rounded shadow-md">
       <h3>Welcome to Codedrift</h3>
 
-      <Link to="/diff/select">
-        <Button>Stacked diff</Button>
+      <Link to="/repositories">
+        <Button>Repositories</Button>
       </Link>
     </div>
   );
