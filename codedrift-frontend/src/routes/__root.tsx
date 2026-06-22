@@ -6,6 +6,7 @@ import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { JSX } from "react";
 import Header from "@/components/header/header";
+import { Toaster } from "@/components/ui/sonner";
 
 const RootLayout = (): JSX.Element => (
   <div className="flex flex-col h-screen max-h-screen px-3 p-4 gap-4">
@@ -13,6 +14,7 @@ const RootLayout = (): JSX.Element => (
     <main className={"rounded flex-1 flex min-h-0 min-w-0 gap-3"}>
       <Outlet />
     </main>
+    <Toaster />
     <TanStackRouterDevtools position={"bottom-right"} />
   </div>
 );

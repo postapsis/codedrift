@@ -5,6 +5,7 @@
 import { useState, type FormEvent, type JSX } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -85,19 +86,21 @@ const Repositories = (): JSX.Element => {
 
   const createMutation = useMutation({
     mutationFn: createRepository,
-    onSuccess: async (): Promise<void> => {
+    onSuccess: async (repository: Repository): Promise<void> => {
       await queryClient.invalidateQueries({ queryKey: ["repositories"] });
       setAddOpen(false);
       setName("");
       setPath("");
+      toast.success(`Repository "${repository.name}" was added`);
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteRepository,
-    onSuccess: async (): Promise<void> => {
+    mutationFn: (repository: Repository) => deleteRepository(repository.id),
+    onSuccess: async (_data: void, repository: Repository): Promise<void> => {
       await queryClient.invalidateQueries({ queryKey: ["repositories"] });
       setPendingDelete(null);
+      toast.success(`Repository "${repository.name}" was deleted`);
     },
   });
 
@@ -249,7 +252,7 @@ const Repositories = (): JSX.Element => {
                 type="button"
                 variant="destructive"
                 disabled={deleteMutation.isPending}
-                onClick={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}>
+                onClick={() => pendingDelete && deleteMutation.mutate(pendingDelete)}>
                 {deleteMutation.isPending ? "Deleting..." : "Delete"}
               </Button>
             </DialogFooter>
