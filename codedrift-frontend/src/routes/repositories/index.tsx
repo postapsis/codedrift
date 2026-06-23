@@ -144,7 +144,7 @@ const Repositories = (): JSX.Element => {
 
     if (repositories.length === 0) {
       return (
-        <div className="flex h-full items-center justify-center text-muted-foreground">
+        <div className="text-muted-foreground">
           No repositories yet.
         </div>
       );
@@ -155,8 +155,8 @@ const Repositories = (): JSX.Element => {
         {repositories.map((repository) => (
           <li
             key={repository.id}
-            className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
-            <div className="min-w-0">
+            className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-3">
+            <div className="min-w-0 flex flex-col gap-1.5">
               <p className="truncate text-sm font-medium">{repository.name}</p>
               <p className="truncate font-mono text-xs text-muted-foreground">{repository.path}</p>
             </div>
