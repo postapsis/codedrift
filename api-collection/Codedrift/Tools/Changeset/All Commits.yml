@@ -1,0 +1,21 @@
+info:
+  name: All Commits
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/tools/changeset/all-commits"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

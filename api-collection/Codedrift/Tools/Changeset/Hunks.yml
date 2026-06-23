@@ -1,0 +1,24 @@
+info:
+  name: Hunks
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/tools/changeset/hunk"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "filePath": "flightdrift-frontend/package.json"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
