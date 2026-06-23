@@ -9,13 +9,15 @@ import Header from "@/components/header/header";
 import { Toaster } from "@/components/ui/sonner";
 
 const RootLayout = (): JSX.Element => (
-  <div className="flex flex-col h-screen max-h-screen px-3 p-4 gap-4">
-    <Header />
-    <main className={"rounded flex-1 flex min-h-0 min-w-0 gap-3"}>
-      <Outlet />
-    </main>
-    <Toaster />
-    <TanStackRouterDevtools position={"bottom-right"} />
+  <div>
+    <div className="flex flex-col h-screen max-h-screen px-3 py-4 gap-4">
+      <Header/>
+      <main className={"rounded flex-1 flex min-h-0 min-w-0 gap-3"}>
+        <Outlet/>
+      </main>
+    </div>
+    <Toaster/>
+    <TanStackRouterDevtools position={"bottom-left"}/>
   </div>
 );
 
