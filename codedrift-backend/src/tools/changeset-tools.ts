@@ -92,7 +92,7 @@ export class ChangesetTools {
     this.tools = {
       allCommits: tool({
         description:
-          "List commits between base and head refs with message, date, and changed repository file paths.",
+          "List commits between base and head refs with message, date, and changed repository file paths. Sorted by datetime in ascending order.",
         inputSchema: emptyToolInputSchema,
         execute: (): Promise<CommitSummary[]> => this.getAllCommits(),
       }),
@@ -104,14 +104,12 @@ export class ChangesetTools {
       fileContentAtBase: tool({
         description: "Return full file content for a repository file path at the base ref.",
         inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<FileContent> =>
-          this.getFileContentAtBase(filePath),
+        execute: ({ filePath }): Promise<FileContent> => this.getFileContentAtBase(filePath),
       }),
       fileContentAtHead: tool({
         description: "Return full file content for a repository file path at the head ref.",
         inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<FileContent> =>
-          this.getFileContentAtHead(filePath),
+        execute: ({ filePath }): Promise<FileContent> => this.getFileContentAtHead(filePath),
       }),
       addChangeset: tool({
         description:
@@ -131,11 +129,13 @@ export class ChangesetTools {
   async getAllCommits(): Promise<CommitSummary[]> {
     const commits = await this.getCommitsWithChangedFiles();
 
-    return commits.map(({ message, date, changedFilePaths }) => ({
-      message,
-      date,
-      changedFilePaths,
-    }));
+    return commits
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .map(({ message, date, changedFilePaths }) => ({
+        message,
+        date,
+        changedFilePaths,
+      }));
   }
 
   async getHunkForFile(filePath: string): Promise<FileHunk> {
@@ -149,13 +149,9 @@ export class ChangesetTools {
   }
 
   addChangeset(changeset: Changeset): Promise<Changeset> {
-    const filesPaths = changeset.filesPaths.map((filePath) =>
-      this.getRepoRelativePath(filePath),
-    );
+    const filesPaths = changeset.filesPaths.map((filePath) => this.getRepoRelativePath(filePath));
 
-    const existingFilePaths = new Set(
-      this.changesets.flatMap((existing) => existing.filesPaths),
-    );
+    const existingFilePaths = new Set(this.changesets.flatMap((existing) => existing.filesPaths));
 
     const seenFilePaths = new Set<string>();
 
@@ -193,10 +189,7 @@ export class ChangesetTools {
     return this.getFileContentAtRef(filePath, this.headRef);
   }
 
-  private async getFileContentAtRef(
-    filePath: string,
-    revision: string,
-  ): Promise<FileContent> {
+  private async getFileContentAtRef(filePath: string, revision: string): Promise<FileContent> {
     const relativePath = this.getRepoRelativePath(filePath);
     const content = await this.git.raw(["show", `${revision}:${relativePath}`]);
 
