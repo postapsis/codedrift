@@ -3,7 +3,7 @@
  * Since: 22/06/2026
  */
 import type { FastifyPluginAsync } from "fastify";
-import { RepositoryService } from "../services/repository-service.ts";
+import { GitService } from "../services/git-service.ts";
 import {
   saveRepository,
   getRepositoryById,
@@ -34,7 +34,7 @@ export const repositoryRoutes: FastifyPluginAsync = async (fastify): Promise<voi
         return { success: false, message: "Repository name is required", data: null };
       }
 
-      const result = await RepositoryService.validateRepository(repositoryPath);
+      const result = await GitService.validateRepository(repositoryPath);
 
       if (!result.valid) {
         reply.status(400);
@@ -75,7 +75,7 @@ export const repositoryRoutes: FastifyPluginAsync = async (fastify): Promise<voi
         return { success: false, message: "Repository not found", data: null };
       }
 
-      const branches = await RepositoryService.getBranches(repository.path);
+      const branches = await GitService.getBranches(repository.path);
 
       return { success: true, message: null, data: branches };
     },
