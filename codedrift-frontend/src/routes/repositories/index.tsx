@@ -5,6 +5,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { type JSX, useState } from "react";
 import RepositoriesList from "@/components/repository-list.tsx";
+import ReviewsList from "@/components/reviews-list.tsx";
 
 const Repositories = (): JSX.Element => {
   const [selectedRepositoryId, setSelectedRepositoryId] = useState<string | null>(null);
@@ -18,7 +19,9 @@ const Repositories = (): JSX.Element => {
         />
       </div>
       <div className="border-l border-dashed"></div>
-      <div className="w-1/4 flex flex-col gap-4">This section is for listing reviews</div>
+      <div className="w-1/4 flex flex-col gap-4">
+        <ReviewsList selectedRepositoryId={selectedRepositoryId} />
+      </div>
     </div>
   );
 };

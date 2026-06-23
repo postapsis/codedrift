@@ -22,7 +22,7 @@
     --muted-foreground: oklch(0.552 0.016 285.938);
     --muted-text: oklch(0.4 0 0);
     --text-muted: oklch(0.493 0 0);
-    --accent: oklch(0.811 0.111 228.698);
+    --accent: oklch(0.928 0 0);
     --accent-foreground: var(--foreground);
     --destructive: oklch(0.577 0.245 27.325);
     --border: oklch(0.883 0.003 286.344);

@@ -24,3 +24,13 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS reviews (
+    id TEXT PRIMARY KEY,
+    base_branch TEXT NOT NULL,
+    head_branch TEXT NOT NULL,
+    created_date TEXT NOT NULL DEFAULT (datetime('now')),
+    repository_id TEXT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE
+  );
+`);

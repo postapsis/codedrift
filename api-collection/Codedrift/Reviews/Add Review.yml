@@ -1,0 +1,26 @@
+info:
+  name: Add Review
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/addReview"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "repositoryId": "",
+        "baseBranch": "main",
+        "headBranch": "feature/integrating-auth"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

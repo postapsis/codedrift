@@ -97,7 +97,7 @@ const RepositoriesList = ({
   const renderRepositoryList = (): JSX.Element => {
     if (repositoriesQuery.isLoading) {
       return (
-        <div className="flex h-full items-center justify-center gap-1.5">
+        <div className="flex h-full items-center gap-1.5">
           <Loader />
           <span>Loading repositories</span>
         </div>
@@ -109,11 +109,7 @@ const RepositoriesList = ({
     }
 
     if (repositories.length === 0) {
-      return (
-        <div className="text-muted-foreground">
-          No repositories yet.
-        </div>
-      );
+      return <div className="text-muted-foreground flex items-center">No repositories yet.</div>;
     }
 
     return (
@@ -122,7 +118,7 @@ const RepositoriesList = ({
           <li
             key={repository.id}
             className={cn(
-              "flex items-center justify-between rounded-md border border-border px-3 py-2 cursor-pointer",
+              "flex items-center justify-between rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-muted/50",
               selectedRepositoryId === repository.id && "bg-muted/50",
             )}
             onClick={() => setSelectedRepositoryId(repository.id)}>

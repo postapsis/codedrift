@@ -8,6 +8,7 @@ import Fastify from "fastify";
 import { DiffService } from "./services/diff-service.ts";
 import { repositoryRoutes } from "./routes/repository-routes.ts";
 import { changesetRoutes } from "./routes/changeset-routes.ts";
+import { reviewRoutes } from "./routes/review-routes.ts";
 import type { DiffFileData } from "./@types/diff.ts";
 
 const fastify = Fastify({
@@ -30,6 +31,7 @@ fastify.get("/diff", async (): Promise<DiffFileData[]> => {
 
 await fastify.register(repositoryRoutes);
 await fastify.register(changesetRoutes);
+await fastify.register(reviewRoutes);
 
 try {
   await fastify.listen({ port: 3000 });
