@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import Loader from "@/components/loader/loader";
+import Loader from "@/components/loader.tsx";
 import type { Repository } from "@/@types/repository.ts";
 import {
   createRepository,

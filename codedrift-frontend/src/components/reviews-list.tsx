@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Loader from "@/components/loader/loader";
+import Loader from "@/components/loader.tsx";
 import type { Review } from "@/@types/review.ts";
 import {
   createReview,

@@ -8,7 +8,7 @@ http:
   url: "{{BASE_URL}}/repository/:repositoryId/branches"
   params:
     - name: repositoryId
-      value: ""
+      value: 019ef386-a24f-74dc-b7b6-c5d46bc361ed
       type: path
   auth: inherit
 

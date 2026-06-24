@@ -5,7 +5,7 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { JSX } from "react";
-import Header from "@/components/header/header";
+import Header from "@/components/header.tsx";
 import { Toaster } from "@/components/ui/sonner";
 
 const RootLayout = (): JSX.Element => (

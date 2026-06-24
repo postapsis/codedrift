@@ -5,11 +5,11 @@
 import { useEffect, useMemo, type JSX } from "react";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import FileBrowser from "@/components/sidebar/file-browser.tsx";
+import FileBrowser from "@/components/file-browser.tsx";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import type { DiffFileData } from "@/@types/diff.ts";
-import Loader from "@/components/loader/loader";
+import Loader from "@/components/loader.tsx";
 
 const diffApiUrl = import.meta.env.VITE_DIFF_API_URL;
 
