@@ -13,9 +13,14 @@ http:
     type: json
     data: |-
       {
-        "repositoryId": "",
-        "baseBranch": "main",
-        "headBranch": "feature/integrating-auth"
+        "name": "My review",
+        "repositories": [
+          {
+            "repositoryId": "",
+            "baseRef": "main",
+            "headRef": "feature/integrating-auth"
+          }
+        ]
       }
   auth: inherit
 

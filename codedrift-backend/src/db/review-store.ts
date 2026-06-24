@@ -4,48 +4,97 @@
  */
 import { uuidv7 } from "uuidv7";
 import { db } from "./database.ts";
-import type { Review } from "../@types/review.ts";
+import type { Review, ReviewRepository } from "../@types/review.ts";
 
 type ReviewRow = {
   id: string;
-  base_branch: string;
-  head_branch: string;
+  name: string;
   created_date: string;
-  repository_id: string;
 };
 
-const insertStatement = db.prepare(
-  "INSERT INTO reviews (id, base_branch, head_branch, repository_id) " +
-    "VALUES (@id, @baseBranch, @headBranch, @repositoryId) RETURNING *",
+type ReviewRepositoryRow = {
+  repository_id: string;
+  repository_name: string;
+  base_ref: string;
+  head_ref: string;
+};
+
+export type ReviewRepositoryInput = {
+  repositoryId: string;
+  baseRef: string;
+  headRef: string;
+};
+
+const insertReviewStatement = db.prepare(
+  "INSERT INTO reviews (id, name) VALUES (@id, @name) RETURNING *",
 );
 
-const selectByRepositoryStatement = db.prepare(
-  "SELECT * FROM reviews WHERE repository_id = @repositoryId ORDER BY created_date",
+const insertReviewRepositoryStatement = db.prepare(
+  "INSERT INTO review_repositories (id, review_id, repository_id, base_ref, head_ref) " +
+    "VALUES (@id, @reviewId, @repositoryId, @baseRef, @headRef)",
+);
+
+const selectReviewByIdStatement = db.prepare("SELECT * FROM reviews WHERE id = @id");
+
+const selectAllReviewsStatement = db.prepare("SELECT * FROM reviews ORDER BY created_date DESC");
+
+const selectReviewRepositoriesStatement = db.prepare(
+  "SELECT rr.repository_id, rr.base_ref, rr.head_ref, r.name AS repository_name " +
+    "FROM review_repositories rr " +
+    "JOIN repositories r ON r.id = rr.repository_id " +
+    "WHERE rr.review_id = @reviewId " +
+    "ORDER BY r.name",
 );
 
 const deleteStatement = db.prepare("DELETE FROM reviews WHERE id = @id");
 
-const mapReviewRow = (row: ReviewRow): Review => ({
-  id: row.id,
-  baseBranch: row.base_branch,
-  headBranch: row.head_branch,
-  createdDate: row.created_date,
+const mapReviewRepositoryRow = (row: ReviewRepositoryRow): ReviewRepository => ({
   repositoryId: row.repository_id,
+  repositoryName: row.repository_name,
+  baseRef: row.base_ref,
+  headRef: row.head_ref,
 });
 
-export const saveReview = (
-  repositoryId: string,
-  baseBranch: string,
-  headBranch: string,
-): Review => {
-  const id = uuidv7();
-  const row = insertStatement.get({ id, baseBranch, headBranch, repositoryId }) as ReviewRow;
+const mapReviewRow = (row: ReviewRow): Review => ({
+  id: row.id,
+  name: row.name,
+  createdDate: row.created_date,
+  repositories: (
+    selectReviewRepositoriesStatement.all({ reviewId: row.id }) as ReviewRepositoryRow[]
+  ).map(mapReviewRepositoryRow),
+});
 
-  return mapReviewRow(row);
+const insertReview = db.transaction((name: string, items: ReviewRepositoryInput[]): string => {
+  const id = uuidv7();
+  insertReviewStatement.run({ id, name });
+
+  for (const item of items) {
+    insertReviewRepositoryStatement.run({
+      id: uuidv7(),
+      reviewId: id,
+      repositoryId: item.repositoryId,
+      baseRef: item.baseRef,
+      headRef: item.headRef,
+    });
+  }
+
+  return id;
+});
+
+export const saveReview = (name: string, items: ReviewRepositoryInput[]): Review => {
+  const id = insertReview(name, items);
+
+  return getReviewById(id) as Review;
 };
 
-export const listReviewsByRepository = (repositoryId: string): Review[] => {
-  const rows = selectByRepositoryStatement.all({ repositoryId }) as ReviewRow[];
+export const getReviewById = (id: string): Review | null => {
+  const row = selectReviewByIdStatement.get({ id }) as ReviewRow | undefined;
+
+  return row ? mapReviewRow(row) : null;
+};
+
+export const listReviews = (): Review[] => {
+  const rows = selectAllReviewsStatement.all() as ReviewRow[];
 
   return rows.map(mapReviewRow);
 };

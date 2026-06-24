@@ -7,12 +7,12 @@ import type { ApiResponse } from "@/@types/api-response.ts";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-export const fetchReviews = async (repositoryId: string): Promise<Review[]> => {
+export const fetchReviews = async (): Promise<Review[]> => {
   if (!apiBaseUrl) {
     throw new Error("VITE_API_BASE_URL is not configured");
   }
 
-  const response = await fetch(`${apiBaseUrl}/repository/${repositoryId}/reviews`, {
+  const response = await fetch(`${apiBaseUrl}/reviews`, {
     headers: { Accept: "application/json" },
   });
 
@@ -40,9 +40,8 @@ export const fetchBranches = async (repositoryId: string): Promise<string[]> => 
 };
 
 export const createReview = async (input: {
-  repositoryId: string;
-  baseBranch: string;
-  headBranch: string;
+  name: string;
+  repositories: { repositoryId: string; baseRef: string; headRef: string }[];
 }): Promise<Review> => {
   const response = await fetch(`${apiBaseUrl}/addReview`, {
     method: "POST",

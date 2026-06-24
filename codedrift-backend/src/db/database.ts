@@ -28,9 +28,18 @@ db.exec(`
 db.exec(`
   CREATE TABLE IF NOT EXISTS reviews (
     id TEXT PRIMARY KEY,
-    base_branch TEXT NOT NULL,
-    head_branch TEXT NOT NULL,
-    created_date TEXT NOT NULL DEFAULT (datetime('now')),
-    repository_id TEXT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE
+    name TEXT NOT NULL,
+    created_date TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS review_repositories (
+    id TEXT PRIMARY KEY,
+    review_id TEXT NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+    repository_id TEXT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+    base_ref TEXT NOT NULL,
+    head_ref TEXT NOT NULL,
+    UNIQUE (review_id, repository_id)
   );
 `);

@@ -7,9 +7,9 @@ import { Link } from "@tanstack/react-router";
 
 const Header = (): JSX.Element => {
   return (
-    <header className="px-4">
+    <header className="px-2">
       <Link to={"/"}>
-        <img src="/codedrift_logo_light.svg" className="h-4" alt="Codedrift Logo" />
+        <img src="/codedrift_logo_light.svg" className="h-3.5" alt="Codedrift Logo" />
       </Link>
     </header>
   );
