@@ -10,6 +10,8 @@ This is an open source fully client-side application about code management/code 
 6. Tanstack Query
 7. Zod
 8. Vite
+9. Zustand (client state)
+10. Sonner (toasts)
 
 ## Rules
 
