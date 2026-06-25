@@ -71,7 +71,7 @@ export type ChangesetToolSet = {
   fileContentAtBase: Tool<FilePathToolInput, FileContent>;
   fileContentAtHead: Tool<FilePathToolInput, FileContent>;
   addChangeset: Tool<Changeset, Changeset>;
-  changesetFiles: Tool<EmptyToolInput, string[]>;
+  getChangesetFiles: Tool<EmptyToolInput, string[]>;
 };
 
 export class ChangesetInputError extends Error {}
@@ -118,7 +118,7 @@ export class ChangesetTools {
         inputSchema: changesetToolInputSchema,
         execute: (changeset): Promise<Changeset> => this.addChangeset(changeset),
       }),
-      changesetFiles: tool({
+      getChangesetFiles: tool({
         description: "Return the list of all file paths across all changesets.",
         inputSchema: emptyToolInputSchema,
         execute: (): Promise<string[]> => this.getChangesetFiles(),
