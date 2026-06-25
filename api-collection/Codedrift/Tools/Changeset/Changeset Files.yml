@@ -1,7 +1,7 @@
 info:
   name: Changeset Files
   type: http
-  seq: 6
+  seq: 3
 
 http:
   method: POST
@@ -11,7 +11,10 @@ http:
       value: application/json
   body:
     type: json
-    data: "{}"
+    data: |-
+      {
+        "reviewId": ""
+      }
   auth: inherit
 
 settings:

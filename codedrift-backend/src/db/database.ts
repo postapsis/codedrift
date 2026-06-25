@@ -43,3 +43,21 @@ db.exec(`
     UNIQUE (review_id, repository_id)
   );
 `);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS changesets (
+    id TEXT PRIMARY KEY,
+    review_id TEXT NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS changeset_files (
+    id TEXT PRIMARY KEY,
+    changeset_id TEXT NOT NULL REFERENCES changesets(id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL
+  );
+`);

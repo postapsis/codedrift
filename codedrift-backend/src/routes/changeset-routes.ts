@@ -4,20 +4,23 @@
  */
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import {
+  addChangeset,
   ChangesetInputError,
-  ChangesetTools,
-  type Changeset,
-  type CommitSummary,
-  type FileContent,
-  type FileHunk,
+  getChangesetFiles,
+  getReviewInfo,
 } from "../tools/changeset-tools.ts";
-import { DIFF_BASE_REF, DIFF_HEAD_REF, REPOSITORY_PATH } from "../utils/temp-repo-info.ts";
+import type { Changeset } from "../@types/changeset.ts";
+import type { ReviewInfo } from "../@types/review.ts";
 
-type FilePathBody = {
-  filePath?: string;
+type ReviewIdBody = {
+  reviewId?: string;
 };
 
-const changesetTools = new ChangesetTools(REPOSITORY_PATH, DIFF_BASE_REF, DIFF_HEAD_REF);
+type AddChangesetBody = ReviewIdBody & {
+  name?: string;
+  description?: string;
+  filesPaths?: string[];
+};
 
 const handleChangesetError = async (reply: FastifyReply, error: unknown): Promise<void> => {
   if (error instanceof ChangesetInputError) {
@@ -29,55 +32,42 @@ const handleChangesetError = async (reply: FastifyReply, error: unknown): Promis
 };
 
 export const changesetRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
-  fastify.post("/tools/changeset/all-commits", async (): Promise<CommitSummary[]> => {
-    return changesetTools.getAllCommits();
-  });
-
-  fastify.post<{ Body: FilePathBody }>(
-    "/tools/changeset/hunk",
-    async (request, reply): Promise<FileHunk | void> => {
+  fastify.post<{ Body: ReviewIdBody }>(
+    "/tools/changeset/review-info",
+    async (request, reply): Promise<ReviewInfo | void> => {
       try {
-        return await changesetTools.getHunkForFile(request.body?.filePath ?? "");
+        return getReviewInfo(request.body?.reviewId ?? "");
       } catch (error) {
         await handleChangesetError(reply, error);
       }
     },
   );
 
-  fastify.post<{ Body: FilePathBody }>(
-    "/tools/changeset/file-content-at-base",
-    async (request, reply): Promise<FileContent | void> => {
-      try {
-        return await changesetTools.getFileContentAtBase(request.body?.filePath ?? "");
-      } catch (error) {
-        await handleChangesetError(reply, error);
-      }
-    },
-  );
-
-  fastify.post<{ Body: FilePathBody }>(
-    "/tools/changeset/file-content-at-head",
-    async (request, reply): Promise<FileContent | void> => {
-      try {
-        return await changesetTools.getFileContentAtHead(request.body?.filePath ?? "");
-      } catch (error) {
-        await handleChangesetError(reply, error);
-      }
-    },
-  );
-
-  fastify.post<{ Body: Changeset }>(
+  fastify.post<{ Body: AddChangesetBody }>(
     "/tools/changeset/add",
     async (request, reply): Promise<Changeset | void> => {
       try {
-        return await changesetTools.addChangeset(request.body);
+        const { reviewId, name, description, filesPaths } = request.body ?? {};
+
+        return addChangeset(reviewId ?? "", {
+          name: name ?? "",
+          description: description ?? "",
+          filesPaths: filesPaths ?? [],
+        });
       } catch (error) {
         await handleChangesetError(reply, error);
       }
     },
   );
 
-  fastify.post("/tools/changeset/files", async (): Promise<string[]> => {
-    return changesetTools.getChangesetFiles();
-  });
+  fastify.post<{ Body: ReviewIdBody }>(
+    "/tools/changeset/files",
+    async (request, reply): Promise<string[] | void> => {
+      try {
+        return getChangesetFiles(request.body?.reviewId ?? "");
+      } catch (error) {
+        await handleChangesetError(reply, error);
+      }
+    },
+  );
 };

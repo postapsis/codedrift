@@ -4,7 +4,12 @@
  */
 import { uuidv7 } from "uuidv7";
 import { db } from "./database.ts";
-import type { Review, ReviewRepository } from "../@types/review.ts";
+import type {
+  Review,
+  ReviewInfo,
+  ReviewRepository,
+  ReviewRepositoryInfo,
+} from "../@types/review.ts";
 
 type ReviewRow = {
   id: string;
@@ -15,6 +20,13 @@ type ReviewRow = {
 type ReviewRepositoryRow = {
   repository_id: string;
   repository_name: string;
+  base_ref: string;
+  head_ref: string;
+};
+
+type ReviewRepositoryInfoRow = {
+  repository_name: string;
+  repository_path: string;
   base_ref: string;
   head_ref: string;
 };
@@ -40,6 +52,14 @@ const selectAllReviewsStatement = db.prepare("SELECT * FROM reviews ORDER BY cre
 
 const selectReviewRepositoriesStatement = db.prepare(
   "SELECT rr.repository_id, rr.base_ref, rr.head_ref, r.name AS repository_name " +
+    "FROM review_repositories rr " +
+    "JOIN repositories r ON r.id = rr.repository_id " +
+    "WHERE rr.review_id = @reviewId " +
+    "ORDER BY r.name",
+);
+
+const selectReviewInfoRepositoriesStatement = db.prepare(
+  "SELECT r.name AS repository_name, r.path AS repository_path, rr.base_ref, rr.head_ref " +
     "FROM review_repositories rr " +
     "JOIN repositories r ON r.id = rr.repository_id " +
     "WHERE rr.review_id = @reviewId " +
@@ -91,6 +111,31 @@ export const getReviewById = (id: string): Review | null => {
   const row = selectReviewByIdStatement.get({ id }) as ReviewRow | undefined;
 
   return row ? mapReviewRow(row) : null;
+};
+
+const mapReviewRepositoryInfoRow = (row: ReviewRepositoryInfoRow): ReviewRepositoryInfo => ({
+  repositoryName: row.repository_name,
+  repositoryPath: row.repository_path,
+  baseRef: row.base_ref,
+  headRef: row.head_ref,
+});
+
+export const getReviewInfo = (id: string): ReviewInfo | null => {
+  const row = selectReviewByIdStatement.get({ id }) as ReviewRow | undefined;
+
+  if (!row) {
+    return null;
+  }
+
+  const repositories = (
+    selectReviewInfoRepositoriesStatement.all({ reviewId: id }) as ReviewRepositoryInfoRow[]
+  ).map(mapReviewRepositoryInfoRow);
+
+  return {
+    reviewId: row.id,
+    name: row.name,
+    repositories,
+  };
 };
 
 export const listReviews = (): Review[] => {

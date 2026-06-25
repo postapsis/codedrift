@@ -15,3 +15,16 @@ export type Review = {
   createdDate: string;
   repositories: ReviewRepository[];
 };
+
+export type ReviewRepositoryInfo = {
+  repositoryName: string;
+  repositoryPath: string;
+  baseRef: string;
+  headRef: string;
+};
+
+export type ReviewInfo = {
+  reviewId: string;
+  name: string;
+  repositories: ReviewRepositoryInfo[];
+};

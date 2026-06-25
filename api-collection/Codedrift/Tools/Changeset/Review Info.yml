@@ -1,11 +1,11 @@
 info:
-  name: Hunks
+  name: Review Info
   type: http
-  seq: 2
+  seq: 1
 
 http:
   method: POST
-  url: "{{BASE_URL}}/tools/changeset/hunk"
+  url: "{{BASE_URL}}/tools/changeset/review-info"
   headers:
     - name: Content-Type
       value: application/json
@@ -13,7 +13,7 @@ http:
     type: json
     data: |-
       {
-        "filePath": "flightdrift-frontend/package.json"
+        "reviewId": ""
       }
   auth: inherit
 
