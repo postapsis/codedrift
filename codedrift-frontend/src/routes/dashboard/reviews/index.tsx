@@ -158,7 +158,7 @@ const DashboardReviews = (): JSX.Element => {
         </div>
 
         <Dialog open={showAddReviewDialog} onOpenChange={handleAddOpenChange}>
-          <DialogContent className="w-[400px]">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>Add review</DialogTitle>
               <DialogDescription>
@@ -167,7 +167,7 @@ const DashboardReviews = (): JSX.Element => {
               </DialogDescription>
             </DialogHeader>
 
-            <form className="flex flex-col gap-3" onSubmit={handleCreateSubmit}>
+            <form className="flex flex-col gap-4" onSubmit={handleCreateSubmit}>
               <div className="flex flex-col gap-1">
                 <label htmlFor="review-name" className="text-xs font-medium">
                   Name
@@ -180,7 +180,7 @@ const DashboardReviews = (): JSX.Element => {
                 />
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 {entries.map((entry) => (
                   <ReviewRepositoryEntry
                     key={entry.key}

@@ -86,7 +86,7 @@ const ReviewRepositoryEntry = ({
           <Select
             value={entry.baseRef}
             onValueChange={(value) => onChange(entry.key, { baseRef: value })}>
-            <SelectTrigger disabled={branchesDisabled} className="w-full shrink-0">
+            <SelectTrigger disabled={branchesDisabled} className="w-[460px]">
               <SelectValue placeholder={branchPlaceholder()} />
             </SelectTrigger>
             <SelectContent>
@@ -104,7 +104,7 @@ const ReviewRepositoryEntry = ({
           <Select
             value={entry.headRef}
             onValueChange={(value) => onChange(entry.key, { headRef: value })}>
-            <SelectTrigger disabled={branchesDisabled} className="w-full">
+            <SelectTrigger disabled={branchesDisabled} className="w-[460px]">
               <SelectValue placeholder={branchPlaceholder()} />
             </SelectTrigger>
             <SelectContent>
@@ -118,7 +118,7 @@ const ReviewRepositoryEntry = ({
         </div>
       </div>
 
-      {sameRef && <p className="text-xs text-red-500">Base and head refs must be different</p>}
+      {sameRef && <p className="text-xs text-red-500">Base and head branches must be different</p>}
 
       {branchesQuery.error instanceof Error && (
         <p className="text-xs text-red-500">{branchesQuery.error.message}</p>
