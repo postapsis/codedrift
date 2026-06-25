@@ -18,9 +18,9 @@
     "node": ">=22"
   },
   "keywords": [],
-  "author": "Jamius Siam",
+  "author": "POST/APSIS",
   "license": "Apache-2.0",
-  "description": "",
+  "description": "Codedrift makes reviewing code bearable again!",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.13",
