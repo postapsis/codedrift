@@ -7,7 +7,7 @@ import "./db/database.ts";
 import Fastify from "fastify";
 import { DiffService } from "./services/diff-service.ts";
 import { repositoryRoutes } from "./routes/repository-routes.ts";
-import { changesetRoutes } from "./routes/changeset-routes.ts";
+import { mcpRoutes } from "./routes/mcp-routes.ts";
 import { reviewRoutes } from "./routes/review-routes.ts";
 import type { DiffFileData } from "./@types/diff.ts";
 
@@ -30,7 +30,7 @@ fastify.get("/diff", async (): Promise<DiffFileData[]> => {
 });
 
 await fastify.register(repositoryRoutes);
-await fastify.register(changesetRoutes);
+await fastify.register(mcpRoutes);
 await fastify.register(reviewRoutes);
 
 try {
