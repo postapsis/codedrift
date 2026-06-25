@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select.tsx";
 import type { Repository } from "@/@types/repository.ts";
 import type { ReviewEntry } from "@/@types/review-entry.ts";
-import { ArrowLeft, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 
 interface ReviewRepositoryEntryPropType {
@@ -51,7 +51,7 @@ const ReviewRepositoryEntry = ({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-border p-3">
+    <div className="flex flex-col gap-3 rounded-md border border-border p-3">
       <div className="flex items-center gap-2">
         <Select
           value={entry.repositoryId}
@@ -80,13 +80,13 @@ const ReviewRepositoryEntry = ({
         </Button>
       </div>
 
-      <div className="flex gap-3 items-center">
-        <div className="flex flex-1 flex-col gap-1">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
           <label className="text-xs font-medium">Base Branch</label>
           <Select
             value={entry.baseRef}
             onValueChange={(value) => onChange(entry.key, { baseRef: value })}>
-            <SelectTrigger disabled={branchesDisabled} className="w-full">
+            <SelectTrigger disabled={branchesDisabled} className="w-full shrink-0">
               <SelectValue placeholder={branchPlaceholder()} />
             </SelectTrigger>
             <SelectContent>
@@ -99,9 +99,7 @@ const ReviewRepositoryEntry = ({
           </Select>
         </div>
 
-        <ArrowLeft size={14} className="relative top-2.5" />
-
-        <div className="flex flex-1 flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <label className="text-xs font-medium">Head Branch</label>
           <Select
             value={entry.headRef}

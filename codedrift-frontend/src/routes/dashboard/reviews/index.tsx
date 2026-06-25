@@ -158,7 +158,7 @@ const DashboardReviews = (): JSX.Element => {
         </div>
 
         <Dialog open={showAddReviewDialog} onOpenChange={handleAddOpenChange}>
-          <DialogContent className="min-w-[500px]">
+          <DialogContent className="w-[400px]">
             <DialogHeader>
               <DialogTitle>Add review</DialogTitle>
               <DialogDescription>
@@ -199,7 +199,8 @@ const DashboardReviews = (): JSX.Element => {
                 size="sm"
                 className="self-start"
                 onClick={addEntry}>
-                <Plus size={14} /> Add repository
+                <Plus size={14} />
+                Add repository
               </Button>
 
               {hasDuplicateRepositories && (
