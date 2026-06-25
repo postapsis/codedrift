@@ -158,7 +158,7 @@ const DashboardReviews = (): JSX.Element => {
         </div>
 
         <Dialog open={showAddReviewDialog} onOpenChange={handleAddOpenChange}>
-          <DialogContent>
+          <DialogContent className="min-w-[514px]">
             <DialogHeader>
               <DialogTitle>Add review</DialogTitle>
               <DialogDescription>
