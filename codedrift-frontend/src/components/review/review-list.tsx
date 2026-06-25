@@ -5,6 +5,7 @@
 import { Button } from "@/components/ui/button.tsx";
 import { ArrowLeft, Trash } from "lucide-react";
 import type { JSX } from "react";
+import { Link } from "@tanstack/react-router";
 import Loader from "@/components/loader.tsx";
 import type { Review } from "@/@types/review.ts";
 
@@ -39,7 +40,10 @@ const ReviewList = ({ isLoading, errorMessage, reviews, setPendingDelete }: Revi
         <li
           key={review.id}
           className="flex items-start justify-between rounded-md border border-border px-3 py-2">
-          <div className="flex min-w-0 flex-col gap-2 py-1">
+          <Link
+            to="/dashboard/reviews/$reviewId"
+            params={{ reviewId: review.id }}
+            className="flex min-w-0 flex-col gap-2 py-1">
             <p className="truncate text-sm font-medium">{review.name}</p>
             <ul className="flex flex-col gap-2 mt-2">
               {review.repositories.map((repository) => (
@@ -60,7 +64,7 @@ const ReviewList = ({ isLoading, errorMessage, reviews, setPendingDelete }: Revi
               ))}
             </ul>
             <p className="truncate text-xs mt-2 text-muted-foreground">{review.createdDate}</p>
-          </div>
+          </Link>
           <Button variant="destructive" size="sm" onClick={() => setPendingDelete(review)}>
             <Trash size={14} />
           </Button>

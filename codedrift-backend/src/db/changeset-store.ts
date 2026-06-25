@@ -34,6 +34,14 @@ const selectChangesetFilePathsStatement = db.prepare(
     "ORDER BY cf.file_path",
 );
 
+const selectChangesetsStatement = db.prepare(
+  "SELECT * FROM changesets WHERE review_id = @reviewId ORDER BY created_at",
+);
+
+const selectFilePathsByChangesetStatement = db.prepare(
+  "SELECT file_path FROM changeset_files WHERE changeset_id = @changesetId ORDER BY file_path",
+);
+
 const mapChangesetRow = (row: ChangesetRow, filesPaths: string[]): Changeset => ({
   id: row.id,
   reviewId: row.review_id,
@@ -68,4 +76,16 @@ export const getChangesetFilePaths = (reviewId: string): string[] => {
   const rows = selectChangesetFilePathsStatement.all({ reviewId }) as FilePathRow[];
 
   return rows.map((row) => row.file_path);
+};
+
+export const getChangesets = (reviewId: string): Changeset[] => {
+  const rows = selectChangesetsStatement.all({ reviewId }) as ChangesetRow[];
+
+  return rows.map((row) => {
+    const filePathRows = selectFilePathsByChangesetStatement.all({
+      changesetId: row.id,
+    }) as FilePathRow[];
+
+    return mapChangesetRow(row, filePathRows.map((filePathRow) => filePathRow.file_path));
+  });
 };

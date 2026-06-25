@@ -5,8 +5,10 @@
 import type { FastifyPluginAsync } from "fastify";
 import { getRepositoryById } from "../db/repository-store.ts";
 import { saveReview, listReviews, deleteReview } from "../db/review-store.ts";
+import { getChangesets } from "../db/changeset-store.ts";
 import type { ApiResponse } from "../@types/api-response.ts";
 import type { Review } from "../@types/review.ts";
+import type { Changeset } from "../@types/changeset.ts";
 
 type AddReviewRepositoryBody = {
   repositoryId?: string;
@@ -87,6 +89,13 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
   fastify.get("/reviews", async (): Promise<ApiResponse<Review[]>> => {
     return { success: true, message: null, data: listReviews() };
   });
+
+  fastify.get<{ Params: ReviewIdParams }>(
+    "/review/:reviewId/changesets",
+    async (request): Promise<ApiResponse<Changeset[]>> => {
+      return { success: true, message: null, data: getChangesets(request.params.reviewId) };
+    },
+  );
 
   fastify.delete<{ Params: ReviewIdParams }>(
     "/review/:reviewId",
