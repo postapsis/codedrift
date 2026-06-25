@@ -139,7 +139,7 @@ const DashboardReviews = (): JSX.Element => {
   };
 
   return (
-    <div className="flex flex-col w-[500px] mt-10 mx-auto">
+    <div className="flex flex-col w-full max-w-3xl mt-10 mx-auto">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="font-heading text-lg font-semibold">Reviews</h1>

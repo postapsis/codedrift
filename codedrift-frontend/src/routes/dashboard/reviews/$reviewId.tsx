@@ -33,7 +33,7 @@ const ReviewDetail = (): JSX.Element => {
       return (
         <div className="flex items-center gap-1.5">
           <Loader />
-          <span>Loading changesets</span>
+          <span>Loading Changesets</span>
         </div>
       );
     }
@@ -46,7 +46,7 @@ const ReviewDetail = (): JSX.Element => {
       return <ReviewSetup reviewId={reviewId} />;
     }
 
-    return <p className="text-sm text-muted-foreground">This review already has changesets.</p>;
+    return <p className="text-sm text-muted-foreground">This review already has Changesets.</p>;
   };
 
   return (

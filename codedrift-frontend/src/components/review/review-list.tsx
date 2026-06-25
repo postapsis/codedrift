@@ -39,11 +39,11 @@ const ReviewList = ({ isLoading, errorMessage, reviews, setPendingDelete }: Revi
       {reviews.map((review) => (
         <li
           key={review.id}
-          className="flex items-start justify-between rounded-md border border-border px-3 py-2">
+          className="flex items-start justify-between rounded-md border border-border gap-3 px-3 py-2">
           <Link
             to="/dashboard/reviews/$reviewId"
             params={{ reviewId: review.id }}
-            className="flex min-w-0 flex-col gap-2 py-1">
+            className="flex-1 flex min-w-0 flex-col gap-2 py-1">
             <p className="truncate text-sm font-medium">{review.name}</p>
             <ul className="flex flex-col gap-2 mt-2">
               {review.repositories.map((repository) => (
