@@ -2,10 +2,10 @@
  * Author: Jamius Siam
  * Since: 05/07/2026
  */
-import { useEffect, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import FileBrowser from "@/components/file-browser.tsx";
 import Loader from "@/components/loader.tsx";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
@@ -38,6 +38,8 @@ const ChangesetDiffLayout = (): JSX.Element => {
       ? changesets[changesetIndex + 1]
       : undefined;
 
+  const [showOverview, setShowOverview] = useState(true);
+
   const setDiffFiles = useDiffViewStore((state) => state.setDiffFiles);
 
   useEffect(() => {
@@ -68,18 +70,33 @@ const ChangesetDiffLayout = (): JSX.Element => {
       <div className="flex min-w-0 flex-1 flex-col rounded bg-white px-4 py-3 shadow-md">
         <div className="flex items-start justify-between gap-4 border-b border-muted pb-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <Link
-              to="/dashboard/reviews/$reviewId"
-              params={{ reviewId }}
-              className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              <ArrowLeft size={12} />
-              Back to review
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                to="/dashboard/reviews/$reviewId"
+                params={{ reviewId }}
+                className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                <ArrowLeft size={12} />
+                Back to review
+              </Link>
 
-            {changeset && (
+              {changeset?.description && (
+                <button
+                  type="button"
+                  onClick={() => setShowOverview((prev) => !prev)}
+                  aria-expanded={showOverview}
+                  className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                  {showOverview ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  {showOverview ? "Hide Overview" : "Show Overview"}
+                </button>
+              )}
+            </div>
+
+            {changeset && showOverview && (
               <div className="mt-1">
                 <h1 className="font-heading text-lg font-semibold">{changeset.name}</h1>
-                <MarkdownContent markdown={changeset.description}/>
+                <div className="w-3/5">
+                  <MarkdownContent markdown={changeset.description} />
+                </div>
               </div>
             )}
           </div>
