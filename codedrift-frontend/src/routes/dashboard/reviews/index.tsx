@@ -27,6 +27,7 @@ import { Plus } from "lucide-react";
 const createEntry = (): ReviewEntry => ({
   key: crypto.randomUUID(),
   repositoryId: "",
+  refMode: "branch",
   baseRef: "",
   headRef: "",
 });
