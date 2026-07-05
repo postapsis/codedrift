@@ -82,7 +82,7 @@ const ChangesetDiffView = (): JSX.Element => {
             <MarkdownContent markdown={selectedFile.summary} className="prose-sm text-xs!" />
           </div>
         )}
-        {/* Font family (Geist Mono via --font-mono) is set on .diff-style-root in main.css */}
+
         <DiffView<ChangesetFileComment[]>
           data={{
             oldFile: {
