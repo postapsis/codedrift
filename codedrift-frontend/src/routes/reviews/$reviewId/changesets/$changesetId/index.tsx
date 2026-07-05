@@ -79,7 +79,7 @@ const ChangesetDiffView = (): JSX.Element => {
         </div>
         {selectedFile.summary && (
           <div className="border-b border-border bg-muted/30 px-3 py-2">
-            <MarkdownContent markdown={selectedFile.summary} className="prose-sm text-xs!" />
+            <MarkdownContent markdown={selectedFile.summary} markdownComponentClasses={{p: "text-[0.8rem]"}} />
           </div>
         )}
 

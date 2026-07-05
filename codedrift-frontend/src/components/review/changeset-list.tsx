@@ -25,10 +25,10 @@ const ChangesetList = ({ reviewId, changesets }: ChangesetListProps): JSX.Elemen
             "transition-colors hover:border-foreground/30 hover:bg-nav-active/20"
           }>
           <span className="text-sm font-semibold text-foreground">{changeset.name}</span>
-          <span className="line-clamp-3 text-xs text-muted-foreground">
+          <span className="line-clamp-3 text-[0.8rem] text-muted-foreground">
             {changeset.description}
           </span>
-          <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <span className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
             <FileDiff size={12} />
             {changeset.files.length} {changeset.files.length === 1 ? "file" : "files"}
           </span>

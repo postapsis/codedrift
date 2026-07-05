@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button.tsx";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -36,27 +35,29 @@ const SettingsDialog = (): JSX.Element => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>Adjust how diffs are displayed.</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-foreground">Code font size</span>
-              <span className="text-xs text-muted-foreground">{codeFontSize}px</span>
+        <div className="flex flex-col gap-3">
+          <h3 className="font-medium">Diff Viewer Settings</h3>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-foreground">Code font size</span>
+                <span className="text-xs text-muted-foreground">{codeFontSize}px</span>
+              </div>
+              <Slider
+                min={CODE_FONT_SIZE_MIN}
+                max={CODE_FONT_SIZE_MAX}
+                step={1}
+                value={[codeFontSize]}
+                onValueChange={(values) => setCodeFontSize(values[0])}
+              />
             </div>
-            <Slider
-              min={CODE_FONT_SIZE_MIN}
-              max={CODE_FONT_SIZE_MAX}
-              step={1}
-              value={[codeFontSize]}
-              onValueChange={(values) => setCodeFontSize(values[0])}
-            />
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-medium text-foreground">Diff style</span>
-            <DiffModeToggle value={diffMode} onChange={setDiffMode} />
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-foreground">Diff style</span>
+              <DiffModeToggle value={diffMode} onChange={setDiffMode} />
+            </div>
           </div>
         </div>
       </DialogContent>
