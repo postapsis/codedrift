@@ -61,8 +61,9 @@ const fileChangeConfig: Record<DiffChangeType, FileChangeConfig> = {
 };
 
 const TREE_INDENT_WIDTH = 16;
-const SIDEBAR_MIN_WIDTH = 300;
-const SIDEBAR_MAX_WIDTH = 600;
+const SIDEBAR_MIN_WIDTH = 180;
+const SIDEBAR_DEFAULT_WIDTH = 300;
+const SIDEBAR_MAX_WIDTH = 1200;
 const SIDEBAR_RESIZE_STEP = 16;
 const SIDEBAR_COLLAPSED_WIDTH = 44;
 
@@ -216,7 +217,7 @@ const FileBrowser = (): JSX.Element => {
   const setSelectedFileId = useDiffViewStore((state) => state.setSelectedFileId);
 
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => new Set());
-  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN_WIDTH);
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const resizeStateRef = useRef<SidebarResizeState | null>(null);
 
