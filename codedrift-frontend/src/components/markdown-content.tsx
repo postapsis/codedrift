@@ -7,10 +7,12 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import MermaidDiagram from "@/components/review/mermaid-diagram.tsx";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
+import { cn } from "@/lib/utils.ts";
 
 interface MarkdownContentProps {
   markdown: string;
   prose?: boolean;
+  className?: string;
 }
 
 const markdownComponents: Components = {
@@ -109,10 +111,14 @@ const proseMarkdownComponents: Components = {
   },
 };
 
-const MarkdownContent = ({ markdown, prose = false }: MarkdownContentProps): JSX.Element => {
+const MarkdownContent = ({
+  markdown,
+  prose = false,
+  className = "",
+}: MarkdownContentProps): JSX.Element => {
   if (prose) {
     return (
-      <div className="prose prose-sm max-w-none prose-headings:font-heading">
+      <div className={cn("prose max-w-none prose-headings:font-heading", className)}>
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={proseMarkdownComponents}>
           {markdown}
         </ReactMarkdown>
@@ -121,7 +127,7 @@ const MarkdownContent = ({ markdown, prose = false }: MarkdownContentProps): JSX
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={cn("flex flex-col gap-3", className)}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
         {markdown}
       </ReactMarkdown>

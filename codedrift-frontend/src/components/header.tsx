@@ -4,13 +4,15 @@
  */
 import type { JSX } from "react";
 import { Link } from "@tanstack/react-router";
+import SettingsDialog from "@/components/settings/settings-dialog.tsx";
 
 const Header = (): JSX.Element => {
   return (
-    <header className="px-2">
+    <header className="flex items-center justify-between px-2">
       <Link to={"/"}>
         <img src="/codedrift_logo_light.svg" className="h-3.5" alt="Codedrift Logo" />
       </Link>
+      <SettingsDialog />
     </header>
   );
 };

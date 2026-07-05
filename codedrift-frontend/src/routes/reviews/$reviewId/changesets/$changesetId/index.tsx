@@ -7,13 +7,21 @@ import { DiffModeEnum, DiffView, setEnableFastDiffTemplate } from "@git-diff-vie
 import "@git-diff-view/react/styles/diff-view-pure.css";
 import { createFileRoute } from "@tanstack/react-router";
 import MarkdownContent from "@/components/markdown-content.tsx";
+import DiffModeToggle from "@/components/settings/diff-mode-toggle.tsx";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
-import { getDiffFileDisplayPath, getSelectedDiffFile } from "@/lib/diff-utils.ts";
+import { useSettingsStore } from "@/store/settings-store.ts";
+import { getDiffFileDisplayPath, getDiffFileId, getSelectedDiffFile } from "@/lib/diff-utils.ts";
 import type { ChangesetFileComment } from "@/@types/changeset.ts";
+import type { DiffMode } from "@/@types/settings.ts";
 import DiffCommentCards, {
   type CommentExtendData,
 } from "@/components/review/diff-comment-card.tsx";
+
+const DIFF_MODE_MAP: Record<DiffMode, DiffModeEnum> = {
+  unified: DiffModeEnum.Unified,
+  split: DiffModeEnum.SplitGitLab,
+};
 
 const buildCommentExtendData = (comments: ChangesetFileComment[]): CommentExtendData => {
   const extendData: CommentExtendData = { oldFile: {}, newFile: {} };
@@ -30,6 +38,10 @@ const buildCommentExtendData = (comments: ChangesetFileComment[]): CommentExtend
 const ChangesetDiffView = (): JSX.Element => {
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
   const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
+  const fileDiffModeOverrides = useDiffViewStore((state) => state.fileDiffModeOverrides);
+  const setFileDiffModeOverride = useDiffViewStore((state) => state.setFileDiffModeOverride);
+  const codeFontSize = useSettingsStore((state) => state.codeFontSize);
+  const diffMode = useSettingsStore((state) => state.diffMode);
 
   const selectedFile = getSelectedDiffFile(diffFiles, selectedFileId);
 
@@ -50,18 +62,27 @@ const ChangesetDiffView = (): JSX.Element => {
     );
   }
 
+  const fileId = getDiffFileId(selectedFile);
+  const effectiveDiffMode = fileDiffModeOverrides[fileId] ?? diffMode;
+
   return (
     <div className={`flex h-full flex-col overflow-auto ${THIN_SCROLLBAR_CLASS}`}>
       <section className="rounded border border-border">
-        <div className="border-b border-border bg-background px-3 py-2 font-mono text-xs text-foreground/80">
-          {getDiffFileDisplayPath(selectedFile)}
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-background px-3 py-2">
+          <span className="font-mono text-xs text-foreground font-medium">
+            {getDiffFileDisplayPath(selectedFile)}
+          </span>
+          <DiffModeToggle
+            value={effectiveDiffMode}
+            onChange={(mode) => setFileDiffModeOverride(fileId, mode)}
+          />
         </div>
         {selectedFile.summary && (
           <div className="border-b border-border bg-muted/30 px-3 py-2">
-            <MarkdownContent markdown={selectedFile.summary} />
+            <MarkdownContent markdown={selectedFile.summary} className="prose-sm text-xs!" />
           </div>
         )}
-        {/* Please see main.css for .diff-style-root font size override */}
+        {/* Font family (Geist Mono via --font-mono) is set on .diff-style-root in main.css */}
         <DiffView<ChangesetFileComment[]>
           data={{
             oldFile: {
@@ -81,7 +102,8 @@ const ChangesetDiffView = (): JSX.Element => {
             data?.length ? <DiffCommentCards comments={data} /> : null
           }
           diffViewHighlight
-          diffViewMode={DiffModeEnum.SplitGitLab}
+          diffViewFontSize={codeFontSize}
+          diffViewMode={DIFF_MODE_MAP[effectiveDiffMode]}
           diffViewTheme="light"
           diffViewWrap
         />
