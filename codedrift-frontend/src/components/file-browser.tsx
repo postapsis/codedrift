@@ -12,6 +12,8 @@ import {
   FileX,
   Folder,
   FolderOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from "lucide-react";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
@@ -62,6 +64,7 @@ const TREE_INDENT_WIDTH = 16;
 const SIDEBAR_MIN_WIDTH = 300;
 const SIDEBAR_MAX_WIDTH = 600;
 const SIDEBAR_RESIZE_STEP = 16;
+const SIDEBAR_COLLAPSED_WIDTH = 44;
 
 type SidebarResizeState = {
   startX: number;
@@ -147,7 +150,6 @@ const renderTreeItems = (
   level = 0,
 ): JSX.Element[] => {
   return items.flatMap((item) => {
-
     if (!item.file) {
       const isCollapsed = collapsedFolderIds.has(item.id);
       const FolderIcon = isCollapsed ? Folder : FolderOpen;
@@ -215,6 +217,7 @@ const FileBrowser = (): JSX.Element => {
 
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => new Set());
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_MIN_WIDTH);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const resizeStateRef = useRef<SidebarResizeState | null>(null);
 
   const fileTree = useMemo(() => buildFileTree(diffFiles), [diffFiles]);
@@ -271,12 +274,39 @@ const FileBrowser = (): JSX.Element => {
     });
   };
 
+  if (isCollapsed) {
+    return (
+      <div
+        className="flex flex-none flex-col items-center rounded bg-white py-4 shadow-md"
+        style={{ width: SIDEBAR_COLLAPSED_WIDTH }}>
+        <button
+          type="button"
+          aria-label="Expand file browser"
+          title="Expand file browser"
+          onClick={() => setIsCollapsed(false)}
+          className="flex size-5 items-center justify-center rounded text-foreground hover:bg-nav-active/40">
+          <PanelLeftOpen className="size-4" strokeWidth={1.8} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative flex flex-none flex-col rounded bg-white px-4 pb-3 pt-4 shadow-md"
       style={{ width: sidebarWidth, minWidth: SIDEBAR_MIN_WIDTH, maxWidth: SIDEBAR_MAX_WIDTH }}>
       <div className="border-b border-muted pb-3 flex flex-col gap-1">
-        <h1 className="font-heading font-medium leading-6 text-base">File Browser</h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="font-heading font-medium leading-6 text-base">File Browser</h1>
+          <button
+            type="button"
+            aria-label="Collapse file browser"
+            title="Collapse file browser"
+            onClick={() => setIsCollapsed(true)}
+            className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-nav-active/40 hover:text-foreground">
+            <PanelLeftClose className="size-4" strokeWidth={1.8} />
+          </button>
+        </div>
         <p className="text-xs text-muted-foreground">{diffFiles.length} changed files</p>
       </div>
 
