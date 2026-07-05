@@ -1,22 +1,19 @@
 /*
  * Author: Jamius Siam
- * Since: 30/05/2026
+ * Since: 05/07/2026
  */
 import { type JSX, useEffect, useMemo } from "react";
 import { DiffModeEnum, DiffView, setEnableFastDiffTemplate } from "@git-diff-view/react";
 import "@git-diff-view/react/styles/diff-view-pure.css";
 import { createFileRoute } from "@tanstack/react-router";
-import { MessageSquare } from "lucide-react";
 import MarkdownContent from "@/components/markdown-content.tsx";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import { getDiffFileDisplayPath, getSelectedDiffFile } from "@/lib/diff-utils.ts";
 import type { ChangesetFileComment } from "@/@types/changeset.ts";
-
-type CommentExtendData = {
-  oldFile: Record<string, { data: ChangesetFileComment[] }>;
-  newFile: Record<string, { data: ChangesetFileComment[] }>;
-};
+import DiffCommentCards, {
+  type CommentExtendData,
+} from "@/components/review/diff-comment-card.tsx";
 
 const buildCommentExtendData = (comments: ChangesetFileComment[]): CommentExtendData => {
   const extendData: CommentExtendData = { oldFile: {}, newFile: {} };
@@ -30,22 +27,7 @@ const buildCommentExtendData = (comments: ChangesetFileComment[]): CommentExtend
   return extendData;
 };
 
-const CommentCards = ({ comments }: { comments: ChangesetFileComment[] }): JSX.Element => {
-  return (
-    <div className="flex flex-col gap-2 border-y border-border bg-muted/30 px-4 py-3">
-      {comments.map((comment, index) => (
-        <div
-          key={`${comment.lineNumber}-${index}`}
-          className="flex items-start gap-2 rounded-md border border-border bg-white p-3">
-          <MessageSquare size={14} className="mt-0.5 shrink-0 text-muted-foreground" />
-          <MarkdownContent markdown={comment.comment} />
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const View = (): JSX.Element => {
+const ChangesetDiffView = (): JSX.Element => {
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
   const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
 
@@ -95,7 +77,9 @@ const View = (): JSX.Element => {
             hunks: [selectedFile.rawDiff],
           }}
           extendData={extendData}
-          renderExtendLine={({ data }) => (data?.length ? <CommentCards comments={data} /> : null)}
+          renderExtendLine={({ data }) =>
+            data?.length ? <DiffCommentCards comments={data} /> : null
+          }
           diffViewHighlight
           diffViewMode={DiffModeEnum.SplitGitLab}
           diffViewTheme="light"
@@ -106,6 +90,6 @@ const View = (): JSX.Element => {
   );
 };
 
-export const Route = createFileRoute("/dashboard/reviews/$reviewId/changesets/$changesetId/")({
-  component: View,
+export const Route = createFileRoute("/reviews/$reviewId/changesets/$changesetId/")({
+  component: ChangesetDiffView,
 });

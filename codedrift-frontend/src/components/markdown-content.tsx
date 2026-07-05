@@ -10,6 +10,7 @@ import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 
 interface MarkdownContentProps {
   markdown: string;
+  prose?: boolean;
 }
 
 const markdownComponents: Components = {
@@ -79,11 +80,46 @@ const markdownComponents: Components = {
       );
     }
 
-    return <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">{children}</code>;
+    return <code className="rounded bg-muted/70 px-1 py-0.5 font-mono text-xs">{children}</code>;
   },
 };
 
-const MarkdownContent = ({ markdown }: MarkdownContentProps): JSX.Element => {
+const proseMarkdownComponents: Components = {
+  pre: ({ children }) => <>{children}</>,
+  code: ({ className, children }) => {
+    const language = /language-(\w+)/.exec(className ?? "")?.[1];
+
+    if (language === "mermaid") {
+      return (
+        <div className="not-prose">
+          <MermaidDiagram code={String(children).trim()} />
+        </div>
+      );
+    }
+
+    if (language) {
+      return (
+        <pre className={`overflow-x-auto ${THIN_SCROLLBAR_CLASS}`}>
+          <code>{children}</code>
+        </pre>
+      );
+    }
+
+    return <code>{children}</code>;
+  },
+};
+
+const MarkdownContent = ({ markdown, prose = false }: MarkdownContentProps): JSX.Element => {
+  if (prose) {
+    return (
+      <div className="prose prose-sm max-w-none prose-headings:font-heading">
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={proseMarkdownComponents}>
+          {markdown}
+        </ReactMarkdown>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>

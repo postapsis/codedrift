@@ -21,10 +21,6 @@ import type { DiffChangeType } from "@/@types/diff.ts";
 import type { ChangesetDiffFile } from "@/@types/changeset-diff.ts";
 import { getDiffFileDisplayPath, getDiffFileId } from "@/lib/diff-utils.ts";
 
-type FileBrowserProps = {
-  title: string;
-};
-
 type FileTreeItem = {
   id: string;
   name: string;
@@ -103,7 +99,7 @@ const sortFileTree = (items: FileTreeItem[]): FileTreeItem[] => {
 };
 
 const buildFileTree = (diffFiles: ChangesetDiffFile[]): FileTreeItem[] => {
-  const root: FileTreeItem = createTreeItem("repository-root", "repository-root", "");
+  const root: FileTreeItem = createTreeItem("~", "~", "");
 
   for (const file of diffFiles) {
     const displayPath = getDiffFileDisplayPath(file);
@@ -151,13 +147,6 @@ const renderTreeItems = (
   level = 0,
 ): JSX.Element[] => {
   return items.flatMap((item) => {
-    const indentLines = Array.from({ length: level }, (_, index) => (
-      <span
-        key={`${item.id}-line-${index}`}
-        className="absolute bottom-0 top-0 w-px border-l border-dashed border-foreground/15"
-        style={{ left: `${index * TREE_INDENT_WIDTH + TREE_INDENT_WIDTH / 2 - 3}px` }}
-      />
-    ));
 
     if (!item.file) {
       const isCollapsed = collapsedFolderIds.has(item.id);
@@ -166,7 +155,6 @@ const renderTreeItems = (
 
       return [
         <div key={item.id} className="relative w-full min-w-max">
-          {indentLines}
           <button
             type="button"
             aria-expanded={!isCollapsed}
@@ -200,7 +188,6 @@ const renderTreeItems = (
 
     return (
       <div key={item.id} className="relative w-full min-w-max">
-        {indentLines}
         <button
           type="button"
           title={getFileTitle(item.file)}
@@ -221,7 +208,7 @@ const renderTreeItems = (
   });
 };
 
-const FileBrowser = ({ title }: FileBrowserProps): JSX.Element => {
+const FileBrowser = (): JSX.Element => {
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
   const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
   const setSelectedFileId = useDiffViewStore((state) => state.setSelectedFileId);
@@ -288,8 +275,8 @@ const FileBrowser = ({ title }: FileBrowserProps): JSX.Element => {
     <div
       className="relative flex flex-none flex-col rounded bg-white px-4 pb-3 pt-4 shadow-md"
       style={{ width: sidebarWidth, minWidth: SIDEBAR_MIN_WIDTH, maxWidth: SIDEBAR_MAX_WIDTH }}>
-      <div className="border-b border-muted pb-3">
-        <h1 className="font-heading text-lg font-semibold">{title}</h1>
+      <div className="border-b border-muted pb-3 flex flex-col gap-1">
+        <h1 className="font-heading font-medium leading-6 text-base">File Browser</h1>
         <p className="text-xs text-muted-foreground">{diffFiles.length} changed files</p>
       </div>
 

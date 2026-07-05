@@ -19,7 +19,7 @@ const ReviewOverview = ({ overview }: ReviewOverviewProps): JSX.Element => {
     );
   }
 
-  return <MarkdownContent markdown={overview} />;
+  return <MarkdownContent markdown={overview} prose />;
 };
 
 export default ReviewOverview;

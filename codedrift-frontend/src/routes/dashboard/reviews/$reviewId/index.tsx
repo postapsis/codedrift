@@ -5,7 +5,7 @@
 import type { JSX } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, GitBranch } from "lucide-react";
 import { fetchReviews, fetchReviewOverview } from "@/service/review-service.ts";
 import { fetchChangesets } from "@/service/changeset-service.ts";
 import Loader from "@/components/loader.tsx";
@@ -69,7 +69,7 @@ const ReviewDetail = (): JSX.Element => {
           )}
         </div>
 
-        <aside className="flex w-80 shrink-0 flex-col gap-2">
+        <aside className="flex w-80 shrink-0 flex-col gap-3">
           <h2 className="font-heading text-sm font-semibold">Changesets</h2>
           <ChangesetList reviewId={reviewId} changesets={changesets} />
         </aside>
@@ -90,10 +90,34 @@ const ReviewDetail = (): JSX.Element => {
           <ArrowLeft size={12} />
           Back to reviews
         </Link>
-        <h1 className="font-heading text-lg font-semibold">{review?.name ?? "Review"}</h1>
+        <h1 className="font-heading text-xl font-semibold">{review?.name ?? "Review"}</h1>
+        {review && review.repositories.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {review.repositories.map((repository) => (
+              <div
+                key={repository.repositoryId}
+                className="flex items-center gap-4 text-xs text-muted-foreground">
+                <div className="flex gap-1 items-center">
+                  <GitBranch size={12} className="shrink-0" strokeWidth={2.5} />
+                  <span className="font-medium text-sm text-foreground/80">
+                    {repository.repositoryName}
+                  </span>
+                </div>
+
+                <div className="rounded border border-border px-2 py-0.5 relative top-px ">
+                  <div className="flex items-center gap-1.5 ">
+                    <span className="font-mono font-medium text-xs">{repository.baseRef}</span>
+                    <ArrowLeft size={12} className="shrink-0 relative " />
+                    <span className="font-mono font-medium text-xs">{repository.headRef}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {renderBody()}
+      <div className="mt-5">{renderBody()}</div>
     </div>
   );
 };

@@ -14,11 +14,11 @@ interface ChangesetListProps {
 
 const ChangesetList = ({ reviewId, changesets }: ChangesetListProps): JSX.Element => {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {changesets.map((changeset) => (
         <Link
           key={changeset.id}
-          to="/dashboard/reviews/$reviewId/changesets/$changesetId"
+          to="/reviews/$reviewId/changesets/$changesetId"
           params={{ reviewId, changesetId: changeset.id }}
           className={
             "flex flex-col gap-1 rounded-md border border-border p-3 " +
