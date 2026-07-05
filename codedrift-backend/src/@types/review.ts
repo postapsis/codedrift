@@ -17,10 +17,16 @@ export type Review = {
 };
 
 export type ReviewRepositoryInfo = {
+  repositoryId: string;
   repositoryName: string;
   repositoryPath: string;
   baseRef: string;
   headRef: string;
+};
+
+export type ReviewOverview = {
+  reviewId: string;
+  overview: string | null;
 };
 
 export type ReviewInfo = {

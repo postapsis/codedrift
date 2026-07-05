@@ -6,10 +6,12 @@ import type { JSX } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { fetchReviews } from "@/service/review-service.ts";
+import { fetchReviews, fetchReviewOverview } from "@/service/review-service.ts";
 import { fetchChangesets } from "@/service/changeset-service.ts";
 import Loader from "@/components/loader.tsx";
 import ReviewSetup from "@/components/review/review-setup.tsx";
+import ReviewOverview from "@/components/review/review-overview.tsx";
+import ChangesetList from "@/components/review/changeset-list.tsx";
 
 const ReviewDetail = (): JSX.Element => {
   const { reviewId } = Route.useParams();
@@ -24,9 +26,17 @@ const ReviewDetail = (): JSX.Element => {
     queryFn: () => fetchChangesets(reviewId),
   });
 
-  const review = reviewsQuery.data?.find((item) => item.id === reviewId);
   const changesets = changesetsQuery.data ?? [];
-  const errorMessage = changesetsQuery.error instanceof Error ? changesetsQuery.error.message : null;
+
+  const overviewQuery = useQuery({
+    queryKey: ["reviewOverview", reviewId],
+    queryFn: () => fetchReviewOverview(reviewId),
+    enabled: changesets.length > 0,
+  });
+
+  const review = reviewsQuery.data?.find((item) => item.id === reviewId);
+  const errorMessage =
+    changesetsQuery.error instanceof Error ? changesetsQuery.error.message : null;
 
   const renderBody = (): JSX.Element => {
     if (changesetsQuery.isLoading) {
@@ -46,11 +56,33 @@ const ReviewDetail = (): JSX.Element => {
       return <ReviewSetup reviewId={reviewId} />;
     }
 
-    return <p className="text-sm text-muted-foreground">This review already has Changesets.</p>;
+    return (
+      <div className="flex items-start gap-6">
+        <div className="min-w-0 flex-1">
+          {overviewQuery.isLoading ? (
+            <div className="flex items-center gap-1.5">
+              <Loader />
+              <span>Loading Overview</span>
+            </div>
+          ) : (
+            <ReviewOverview overview={overviewQuery.data?.overview ?? null} />
+          )}
+        </div>
+
+        <aside className="flex w-80 shrink-0 flex-col gap-2">
+          <h2 className="font-heading text-sm font-semibold">Changesets</h2>
+          <ChangesetList reviewId={reviewId} changesets={changesets} />
+        </aside>
+      </div>
+    );
   };
 
   return (
-    <div className="mx-auto mt-10 flex w-full max-w-3xl flex-col gap-4">
+    <div
+      className={
+        "mx-auto mt-10 flex w-full flex-col gap-4 " +
+        (changesets.length > 0 ? "max-w-6xl" : "max-w-3xl")
+      }>
       <div className="flex flex-col gap-2">
         <Link
           to="/dashboard/reviews"
@@ -66,6 +98,6 @@ const ReviewDetail = (): JSX.Element => {
   );
 };
 
-export const Route = createFileRoute("/dashboard/reviews/$reviewId")({
+export const Route = createFileRoute("/dashboard/reviews/$reviewId/")({
   component: ReviewDetail,
 });

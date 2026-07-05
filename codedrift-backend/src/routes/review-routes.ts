@@ -4,11 +4,13 @@
  */
 import type { FastifyPluginAsync } from "fastify";
 import { getRepositoryById } from "../db/repository-store.ts";
-import { saveReview, listReviews, deleteReview } from "../db/review-store.ts";
+import { saveReview, listReviews, deleteReview, getReviewOverview } from "../db/review-store.ts";
 import { getChangesets } from "../db/changeset-store.ts";
+import { ChangesetDiffService } from "../services/changeset-diff-service.ts";
 import type { ApiResponse } from "../@types/api-response.ts";
-import type { Review } from "../@types/review.ts";
+import type { Review, ReviewOverview } from "../@types/review.ts";
 import type { Changeset } from "../@types/changeset.ts";
+import type { ChangesetDiff } from "../@types/changeset-diff.ts";
 
 type AddReviewRepositoryBody = {
   repositoryId?: string;
@@ -23,6 +25,11 @@ type AddReviewBody = {
 
 type ReviewIdParams = {
   reviewId: string;
+};
+
+type ChangesetDiffParams = {
+  reviewId: string;
+  changesetId: string;
 };
 
 export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
@@ -94,6 +101,37 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
     "/review/:reviewId/changesets",
     async (request): Promise<ApiResponse<Changeset[]>> => {
       return { success: true, message: null, data: getChangesets(request.params.reviewId) };
+    },
+  );
+
+  fastify.get<{ Params: ReviewIdParams }>(
+    "/review/:reviewId/overview",
+    async (request, reply): Promise<ApiResponse<ReviewOverview | null>> => {
+      const overview = getReviewOverview(request.params.reviewId);
+
+      if (!overview) {
+        reply.status(404);
+        return { success: false, message: "Review not found", data: null };
+      }
+
+      return { success: true, message: null, data: overview };
+    },
+  );
+
+  fastify.get<{ Params: ChangesetDiffParams }>(
+    "/review/:reviewId/changeset/:changesetId/diff",
+    async (request, reply): Promise<ApiResponse<ChangesetDiff | null>> => {
+      const diff = await ChangesetDiffService.getChangesetDiff(
+        request.params.reviewId,
+        request.params.changesetId,
+      );
+
+      if (!diff) {
+        reply.status(404);
+        return { success: false, message: "Changeset not found", data: null };
+      }
+
+      return { success: true, message: null, data: diff };
     },
   );
 

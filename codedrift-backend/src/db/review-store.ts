@@ -7,6 +7,7 @@ import { db } from "./database.ts";
 import type {
   Review,
   ReviewInfo,
+  ReviewOverview,
   ReviewRepository,
   ReviewRepositoryInfo,
 } from "../@types/review.ts";
@@ -25,10 +26,16 @@ type ReviewRepositoryRow = {
 };
 
 type ReviewRepositoryInfoRow = {
+  repository_id: string;
   repository_name: string;
   repository_path: string;
   base_ref: string;
   head_ref: string;
+};
+
+type ReviewOverviewRow = {
+  id: string;
+  overview: string | null;
 };
 
 export type ReviewRepositoryInput = {
@@ -59,7 +66,8 @@ const selectReviewRepositoriesStatement = db.prepare(
 );
 
 const selectReviewInfoRepositoriesStatement = db.prepare(
-  "SELECT r.name AS repository_name, r.path AS repository_path, rr.base_ref, rr.head_ref " +
+  "SELECT r.id AS repository_id, r.name AS repository_name, r.path AS repository_path, " +
+    "rr.base_ref, rr.head_ref " +
     "FROM review_repositories rr " +
     "JOIN repositories r ON r.id = rr.repository_id " +
     "WHERE rr.review_id = @reviewId " +
@@ -67,6 +75,12 @@ const selectReviewInfoRepositoriesStatement = db.prepare(
 );
 
 const deleteStatement = db.prepare("DELETE FROM reviews WHERE id = @id");
+
+const updateReviewOverviewStatement = db.prepare(
+  "UPDATE reviews SET overview = @overview WHERE id = @id",
+);
+
+const selectReviewOverviewStatement = db.prepare("SELECT id, overview FROM reviews WHERE id = @id");
 
 const mapReviewRepositoryRow = (row: ReviewRepositoryRow): ReviewRepository => ({
   repositoryId: row.repository_id,
@@ -114,6 +128,7 @@ export const getReviewById = (id: string): Review | null => {
 };
 
 const mapReviewRepositoryInfoRow = (row: ReviewRepositoryInfoRow): ReviewRepositoryInfo => ({
+  repositoryId: row.repository_id,
   repositoryName: row.repository_name,
   repositoryPath: row.repository_path,
   baseRef: row.base_ref,
@@ -136,6 +151,16 @@ export const getReviewInfo = (id: string): ReviewInfo | null => {
     name: row.name,
     repositories,
   };
+};
+
+export const setReviewOverview = (id: string, overview: string): boolean => {
+  return updateReviewOverviewStatement.run({ id, overview }).changes > 0;
+};
+
+export const getReviewOverview = (id: string): ReviewOverview | null => {
+  const row = selectReviewOverviewStatement.get({ id }) as ReviewOverviewRow | undefined;
+
+  return row ? { reviewId: row.id, overview: row.overview } : null;
 };
 
 export const listReviews = (): Review[] => {

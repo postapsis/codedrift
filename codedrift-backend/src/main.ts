@@ -5,11 +5,9 @@
 import "dotenv/config";
 import "./db/database.ts";
 import Fastify from "fastify";
-import { DiffService } from "./services/diff-service.ts";
 import { repositoryRoutes } from "./routes/repository-routes.ts";
 import { mcpRoutes } from "./routes/mcp-routes.ts";
 import { reviewRoutes } from "./routes/review-routes.ts";
-import type { DiffFileData } from "./@types/diff.ts";
 
 const fastify = Fastify({
   logger: true,
@@ -23,10 +21,6 @@ fastify.addHook("onRequest", async (request, reply): Promise<void> => {
   if (request.method === "OPTIONS") {
     await reply.status(204).send();
   }
-});
-
-fastify.get("/diff", async (): Promise<DiffFileData[]> => {
-  return DiffService.getDiffFiles();
 });
 
 await fastify.register(repositoryRoutes);

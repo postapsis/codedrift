@@ -2,7 +2,7 @@
  * Author: Jamius Siam
  * Since: 23/06/2026
  */
-import type { Review } from "@/@types/review.ts";
+import type { Review, ReviewOverview } from "@/@types/review.ts";
 import type { ApiResponse } from "@/@types/api-response.ts";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -21,6 +21,20 @@ export const fetchReviews = async (): Promise<Review[]> => {
   }
 
   const body: ApiResponse<Review[]> = await response.json();
+
+  return body.data;
+};
+
+export const fetchReviewOverview = async (reviewId: string): Promise<ReviewOverview> => {
+  const response = await fetch(`${apiBaseUrl}/review/${reviewId}/overview`, {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch review overview (${response.status})`);
+  }
+
+  const body: ApiResponse<ReviewOverview> = await response.json();
 
   return body.data;
 };

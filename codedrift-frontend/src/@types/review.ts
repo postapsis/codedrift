@@ -15,3 +15,8 @@ export type Review = {
   createdDate: string;
   repositories: ReviewRepository[];
 };
+
+export type ReviewOverview = {
+  reviewId: string;
+  overview: string | null;
+};

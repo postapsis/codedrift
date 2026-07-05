@@ -13,16 +13,21 @@ interface ReviewSetupProps {
 }
 
 const buildInstruction = (reviewId: string): string =>
-  `You are preparing changesets from git diff(s) for a human code review using the "codedrift-changeset" MCP server.
+  `You are preparing a code review using the "codedrift-changeset" MCP server.
 
 Review id: ${reviewId}
 
-Do the following:
-1. Call get_review_info({ reviewId: "${reviewId}" }) to get this review's repositories — each with its filesystem path and base/head refs.
+Do the following, in order:
+1. Call get_review_info({ reviewId: "${reviewId}" }) to get this review's repositories — each with its absolute filesystem path and base/head refs.
 2. For each repository, diff its base ref against its head ref and read the changed files so you understand the full set of changes.
-3. Group the changed files into changesets. A changeset is a cohesive, self-contained unit of related change (one feature, refactor, fix, or concern). Give each a clear name and a description of what it groups and why. Every changed file belongs to exactly one changeset.
-4. Order the changesets to make human review as easy as possible: foundational, low-level changes first (types, schema, shared utilities), then the code that builds on them, then call sites / UI / wiring, and incidental changes (renames, formatting, config) last — so a reviewer reads them in a logical, dependency-respecting sequence.
-5. Submit them in that order: for each changeset call add_changeset({ reviewId: "${reviewId}", name, description, filesPaths }), where filesPaths are repository-relative. A file may belong to only one changeset; call get_changeset_files({ reviewId: "${reviewId}" }) to see what's already been grouped.`;
+3. FIRST, create the review overview: call add_review_overview({ reviewId: "${reviewId}", overview }) with a comprehensive markdown summary of what this change is trying to do — its goals, the architecture, and how data flows through the changed code. Illustrate flows and structure with mermaidjs diagrams in \`\`\`mermaid fenced code blocks. Do not fill the overview with code: use code snippets very briefly and only when they genuinely clarify something — prefer prose and diagrams.
+4. THEN group the changed files into changesets. A changeset is a cohesive, self-contained unit of related change (one feature, refactor, fix, or concern). Give each a clear name and a description of what it groups and why. Every changed file belongs to exactly one changeset.
+5. Order the changesets to make human review as easy as possible: foundational, low-level changes first (types, schema, shared utilities), then the code that builds on them, then call sites / UI / wiring, and incidental changes (renames, formatting, config) last — so a reviewer reads them in a logical, dependency-respecting sequence.
+6. Submit them in that order: for each changeset call add_changeset({ reviewId: "${reviewId}", name, description, files }). Each entry in files must have:
+   - filePath: the ABSOLUTE path of the changed file (it must be inside one of the review's repositories),
+   - summary: a concise summary of what changed in that file and why (1-3 sentences),
+   - comments (optional): line-anchored review comments where you have something worth pointing out (potential bugs, risky patterns, notable decisions). Each comment has a 1-based lineNumber, the comment text (markdown), and a side: use "new" (the default) with new-file line numbers for added/changed lines, and "old" with old-file line numbers for deleted lines. Only comment on lines that are part of the diff.
+   A file may belong to only one changeset; call get_changeset_files({ reviewId: "${reviewId}" }) to see the absolute paths already grouped.`;
 
 const ReviewSetup = ({ reviewId }: ReviewSetupProps): JSX.Element => {
   const [copied, setCopied] = useState(false);

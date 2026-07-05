@@ -29,6 +29,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS reviews (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    overview TEXT,
     created_date TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
@@ -58,6 +59,18 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS changeset_files (
     id TEXT PRIMARY KEY,
     changeset_id TEXT NOT NULL REFERENCES changesets(id) ON DELETE CASCADE,
-    file_path TEXT NOT NULL
+    repository_id TEXT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL,
+    summary TEXT NOT NULL
+  );
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS changeset_file_comments (
+    id TEXT PRIMARY KEY,
+    changeset_file_id TEXT NOT NULL REFERENCES changeset_files(id) ON DELETE CASCADE,
+    line_number INTEGER NOT NULL,
+    side TEXT NOT NULL DEFAULT 'new' CHECK (side IN ('old', 'new')),
+    comment TEXT NOT NULL
   );
 `);

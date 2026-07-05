@@ -4,21 +4,22 @@
  */
 import { simpleGit, type SimpleGit } from "simple-git";
 import type { DiffChangeType, DiffFileData } from "../@types/diff.ts";
-import { DIFF_BASE_REF, DIFF_HEAD_REF, REPOSITORY_PATH } from "../utils/temp-repo-info.ts";
 
 type DiffFileMetadata = Omit<DiffFileData, "oldFileContent" | "newFileContent">;
 
 export class DiffService {
-  static getDiffFiles(): Promise<DiffFileData[]> {
-    return DiffService.fetchDiffFiles(REPOSITORY_PATH);
-  }
-
-  private static async fetchDiffFiles(repoPath: string): Promise<DiffFileData[]> {
+  static async getDiffFiles(
+    repoPath: string,
+    baseRef: string,
+    headRef: string,
+  ): Promise<DiffFileData[]> {
     const git = simpleGit(repoPath);
-    const diffContent = await git.diff([DIFF_BASE_REF, DIFF_HEAD_REF]);
+    const diffContent = await git.diff([baseRef, headRef]);
     const diffFiles = DiffService.parseDiffFiles(diffContent);
 
-    return Promise.all(diffFiles.map((diffFile) => DiffService.attachFileContent(git, diffFile)));
+    return Promise.all(
+      diffFiles.map((diffFile) => DiffService.attachFileContent(git, baseRef, headRef, diffFile)),
+    );
   }
 
   private static parseDiffFiles(diffContent: string): DiffFileMetadata[] {
@@ -117,11 +118,13 @@ export class DiffService {
 
   private static async attachFileContent(
     git: SimpleGit,
+    baseRef: string,
+    headRef: string,
     diffFile: DiffFileMetadata,
   ): Promise<DiffFileData> {
     const [oldFileContent, newFileContent] = await Promise.all([
-      DiffService.fetchFileContent(git, DIFF_BASE_REF, diffFile.oldFileName),
-      DiffService.fetchFileContent(git, DIFF_HEAD_REF, diffFile.newFileName),
+      DiffService.fetchFileContent(git, baseRef, diffFile.oldFileName),
+      DiffService.fetchFileContent(git, headRef, diffFile.newFileName),
     ]);
 
     return {

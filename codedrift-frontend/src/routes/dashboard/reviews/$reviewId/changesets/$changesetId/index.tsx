@@ -2,13 +2,48 @@
  * Author: Jamius Siam
  * Since: 30/05/2026
  */
-import { type JSX, useEffect } from "react";
+import { type JSX, useEffect, useMemo } from "react";
 import { DiffModeEnum, DiffView, setEnableFastDiffTemplate } from "@git-diff-view/react";
 import "@git-diff-view/react/styles/diff-view-pure.css";
 import { createFileRoute } from "@tanstack/react-router";
+import { MessageSquare } from "lucide-react";
+import MarkdownContent from "@/components/markdown-content.tsx";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import { getDiffFileDisplayPath, getSelectedDiffFile } from "@/lib/diff-utils.ts";
+import type { ChangesetFileComment } from "@/@types/changeset.ts";
+
+type CommentExtendData = {
+  oldFile: Record<string, { data: ChangesetFileComment[] }>;
+  newFile: Record<string, { data: ChangesetFileComment[] }>;
+};
+
+const buildCommentExtendData = (comments: ChangesetFileComment[]): CommentExtendData => {
+  const extendData: CommentExtendData = { oldFile: {}, newFile: {} };
+
+  for (const comment of comments) {
+    const sideBucket = comment.side === "old" ? extendData.oldFile : extendData.newFile;
+    const lineEntry = (sideBucket[comment.lineNumber] ??= { data: [] });
+    lineEntry.data.push(comment);
+  }
+
+  return extendData;
+};
+
+const CommentCards = ({ comments }: { comments: ChangesetFileComment[] }): JSX.Element => {
+  return (
+    <div className="flex flex-col gap-2 border-y border-border bg-muted/30 px-4 py-3">
+      {comments.map((comment, index) => (
+        <div
+          key={`${comment.lineNumber}-${index}`}
+          className="flex items-start gap-2 rounded-md border border-border bg-white p-3">
+          <MessageSquare size={14} className="mt-0.5 shrink-0 text-muted-foreground" />
+          <MarkdownContent markdown={comment.comment} />
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const View = (): JSX.Element => {
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
@@ -19,6 +54,11 @@ const View = (): JSX.Element => {
   useEffect(() => {
     setEnableFastDiffTemplate(true);
   }, [selectedFileId]);
+
+  const extendData = useMemo(
+    () => buildCommentExtendData(selectedFile?.comments ?? []),
+    [selectedFile],
+  );
 
   if (!selectedFile) {
     return (
@@ -34,8 +74,13 @@ const View = (): JSX.Element => {
         <div className="border-b border-border bg-background px-3 py-2 font-mono text-xs text-foreground/80">
           {getDiffFileDisplayPath(selectedFile)}
         </div>
+        {selectedFile.summary && (
+          <div className="border-b border-border bg-muted/30 px-3 py-2">
+            <MarkdownContent markdown={selectedFile.summary} />
+          </div>
+        )}
         {/* Please see main.css for .diff-style-root font size override */}
-        <DiffView
+        <DiffView<ChangesetFileComment[]>
           data={{
             oldFile: {
               fileName: selectedFile.oldFileName,
@@ -49,6 +94,8 @@ const View = (): JSX.Element => {
             },
             hunks: [selectedFile.rawDiff],
           }}
+          extendData={extendData}
+          renderExtendLine={({ data }) => (data?.length ? <CommentCards comments={data} /> : null)}
           diffViewHighlight
           diffViewMode={DiffModeEnum.SplitGitLab}
           diffViewTheme="light"
@@ -59,6 +106,6 @@ const View = (): JSX.Element => {
   );
 };
 
-export const Route = createFileRoute("/diff/view/")({
+export const Route = createFileRoute("/dashboard/reviews/$reviewId/changesets/$changesetId/")({
   component: View,
 });

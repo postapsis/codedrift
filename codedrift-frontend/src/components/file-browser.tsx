@@ -17,15 +17,20 @@ import {
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { cn } from "@/lib/utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
-import type { DiffChangeType, DiffFileData } from "@/@types/diff.ts";
+import type { DiffChangeType } from "@/@types/diff.ts";
+import type { ChangesetDiffFile } from "@/@types/changeset-diff.ts";
 import { getDiffFileDisplayPath, getDiffFileId } from "@/lib/diff-utils.ts";
+
+type FileBrowserProps = {
+  title: string;
+};
 
 type FileTreeItem = {
   id: string;
   name: string;
   path: string;
   children: FileTreeItem[];
-  file?: DiffFileData;
+  file?: ChangesetDiffFile;
 };
 
 type FileChangeConfig = {
@@ -97,7 +102,7 @@ const sortFileTree = (items: FileTreeItem[]): FileTreeItem[] => {
     });
 };
 
-const buildFileTree = (diffFiles: DiffFileData[]): FileTreeItem[] => {
+const buildFileTree = (diffFiles: ChangesetDiffFile[]): FileTreeItem[] => {
   const root: FileTreeItem = createTreeItem("repository-root", "repository-root", "");
 
   for (const file of diffFiles) {
@@ -129,7 +134,7 @@ const buildFileTree = (diffFiles: DiffFileData[]): FileTreeItem[] => {
   return [root];
 };
 
-const getFileTitle = (file: DiffFileData): string => {
+const getFileTitle = (file: ChangesetDiffFile): string => {
   if (file.changeType !== "moved") {
     return getDiffFileDisplayPath(file);
   }
@@ -216,7 +221,7 @@ const renderTreeItems = (
   });
 };
 
-const FileBrowser = (): JSX.Element => {
+const FileBrowser = ({ title }: FileBrowserProps): JSX.Element => {
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
   const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
   const setSelectedFileId = useDiffViewStore((state) => state.setSelectedFileId);
@@ -284,7 +289,7 @@ const FileBrowser = (): JSX.Element => {
       className="relative flex flex-none flex-col rounded bg-white px-4 pb-3 pt-4 shadow-md"
       style={{ width: sidebarWidth, minWidth: SIDEBAR_MIN_WIDTH, maxWidth: SIDEBAR_MAX_WIDTH }}>
       <div className="border-b border-muted pb-3">
-        <h1 className="font-heading text-lg font-semibold">Changeset</h1>
+        <h1 className="font-heading text-lg font-semibold">{title}</h1>
         <p className="text-xs text-muted-foreground">{diffFiles.length} changed files</p>
       </div>
 
