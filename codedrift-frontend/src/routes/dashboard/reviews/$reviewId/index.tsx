@@ -96,16 +96,16 @@ const ReviewDetail = (): JSX.Element => {
             {review.repositories.map((repository) => (
               <div
                 key={repository.repositoryId}
-                className="flex items-center gap-4 text-xs text-muted-foreground">
-                <div className="flex gap-1 items-center">
+                className="flex items-center gap-4 text-xs text-foreground/80">
+                <div className="flex gap-1.25 items-center">
                   <GitBranch size={12} className="shrink-0" strokeWidth={2.5} />
-                  <span className="font-medium text-sm text-foreground/80">
+                  <span className="font-medium text-[0.8rem]">
                     {repository.repositoryName}
                   </span>
                 </div>
 
-                <div className="rounded border border-border px-2 py-0.5 relative top-px ">
-                  <div className="flex items-center gap-1.5 ">
+                <div className="rounded border border-border px-2 py-0.5">
+                  <div className="flex items-center gap-1.5">
                     <span className="font-mono font-medium text-xs">{repository.baseRef}</span>
                     <ArrowLeft size={12} className="shrink-0 relative " />
                     <span className="font-mono font-medium text-xs">{repository.headRef}</span>
