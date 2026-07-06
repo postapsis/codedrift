@@ -23,8 +23,11 @@ const DiffCommentCards = ({
       {comments.map((comment, index) => (
         <div
           key={`${comment.lineNumber}-${index}`}
-          className="flex items-start gap-2 rounded-md border border-border bg-white p-3">
-          <MessageSquare size={14} className="mt-0.5 shrink-0 text-muted-foreground relative top-px" />
+          className="flex items-start gap-2 rounded-md border border-border bg-white p-3  max-w-[1000px]">
+          <MessageSquare
+            size={14}
+            className="mt-0.5 shrink-0 text-muted-foreground relative top-px"
+          />
           <MarkdownContent markdown={comment.comment} />
         </div>
       ))}
