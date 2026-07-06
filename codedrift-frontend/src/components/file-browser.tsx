@@ -10,8 +10,6 @@ import {
   FilePlus,
   FileSymlink,
   FileX,
-  Folder,
-  FolderOpen,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
@@ -154,7 +152,6 @@ const renderTreeItems = (
   return items.flatMap((item) => {
     if (!item.file) {
       const isCollapsed = collapsedFolderIds.has(item.id);
-      const FolderIcon = isCollapsed ? Folder : FolderOpen;
       const ChevronIcon = isCollapsed ? ChevronRight : ChevronDown;
 
       return [
@@ -169,7 +166,6 @@ const renderTreeItems = (
             style={{ paddingLeft: `${level * TREE_INDENT_WIDTH}px` }}
             onClick={() => onToggleFolder(item.id)}>
             <ChevronIcon className="size-3 shrink-0 text-foreground/90" strokeWidth={1.8} />
-            <FolderIcon className="size-4 shrink-0 text-foreground/90" strokeWidth={1.8} />
             <span className="whitespace-nowrap">{item.name}</span>
           </button>
         </div>,
