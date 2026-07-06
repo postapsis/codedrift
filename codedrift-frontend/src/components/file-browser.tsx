@@ -59,7 +59,7 @@ const fileChangeConfig: Record<DiffChangeType, FileChangeConfig> = {
   },
 };
 
-const TREE_INDENT_WIDTH = 16;
+const TREE_INDENT_WIDTH = 8;
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_DEFAULT_WIDTH = 300;
 const SIDEBAR_MAX_WIDTH = 1200;
