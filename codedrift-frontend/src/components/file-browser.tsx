@@ -315,7 +315,7 @@ const FileBrowser = (): JSX.Element => {
       style={{ width: sidebarWidth, minWidth: SIDEBAR_MIN_WIDTH, maxWidth: SIDEBAR_MAX_WIDTH }}>
       <div className="border-b border-muted pb-3 flex flex-col gap-0">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="leading-6 text-sm">File Browser</h1>
+          <h6 className="font-semibold text-xs">File Browser</h6>
           <button
             type="button"
             aria-label="Collapse file browser"
