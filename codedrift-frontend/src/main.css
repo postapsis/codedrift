@@ -134,13 +134,16 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+
   html {
     @apply font-sans;
   }
@@ -155,10 +158,16 @@
 
   .prose code {
     @apply text-[0.9em]! py-0.5 px-1 bg-muted/70 rounded-md font-medium!;
+    font-variant-ligatures: none;
   }
 
   .prose h1 {
     @apply text-[1.3rem]! font-bold!;
+  }
+
+  code,
+  pre {
+    font-variant-ligatures: none;
   }
 }
 
