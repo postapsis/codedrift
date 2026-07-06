@@ -11,7 +11,12 @@ import DiffModeToggle from "@/components/settings/diff-mode-toggle.tsx";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import { useSettingsStore } from "@/store/settings-store.ts";
-import { getDiffFileDisplayPath, getDiffFileId, getSelectedDiffFile } from "@/lib/diff-utils.ts";
+import {
+  getDiffFileByDisplayPath,
+  getDiffFileDisplayPath,
+  getDiffFileId,
+} from "@/lib/diff-utils.ts";
+import { getFirstTreeFile } from "@/lib/file-tree.ts";
 import type { ChangesetFileComment } from "@/@types/changeset.ts";
 import type { DiffMode } from "@/@types/settings.ts";
 import DiffCommentCards, {
@@ -37,18 +42,19 @@ const buildCommentExtendData = (comments: ChangesetFileComment[]): CommentExtend
 
 const ChangesetDiffView = (): JSX.Element => {
   const { reviewId } = Route.useParams();
+  const search = Route.useSearch();
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
-  const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
   const fileDiffModeOverrides = useDiffViewStore((state) => state.fileDiffModeOverrides);
   const setFileDiffModeOverride = useDiffViewStore((state) => state.setFileDiffModeOverride);
   const codeFontSize = useSettingsStore((state) => state.codeFontSize);
   const diffMode = useSettingsStore((state) => state.diffMode);
 
-  const selectedFile = getSelectedDiffFile(diffFiles, selectedFileId);
+  const selectedFile =
+    getDiffFileByDisplayPath(diffFiles, search.file) ?? getFirstTreeFile(diffFiles) ?? undefined;
 
   useEffect(() => {
     setEnableFastDiffTemplate(true);
-  }, [selectedFileId]);
+  }, [search.file]);
 
   const extendData = useMemo(
     () => buildCommentExtendData(selectedFile?.comments ?? []),

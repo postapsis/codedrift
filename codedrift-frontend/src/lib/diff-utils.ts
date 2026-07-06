@@ -15,9 +15,13 @@ export const getDiffFileDisplayPath = (file: ChangesetDiffFile): string => {
   return `${file.repositoryName}/${filePath}`;
 };
 
-export const getSelectedDiffFile = (
+export const getDiffFileByDisplayPath = (
   diffFiles: ChangesetDiffFile[],
-  selectedFileId: string | null,
+  displayPath: string | undefined,
 ): ChangesetDiffFile | undefined => {
-  return diffFiles.find((file) => getDiffFileId(file) === selectedFileId) ?? diffFiles.at(0);
+  if (!displayPath) {
+    return undefined;
+  }
+
+  return diffFiles.find((file) => getDiffFileDisplayPath(file) === displayPath);
 };

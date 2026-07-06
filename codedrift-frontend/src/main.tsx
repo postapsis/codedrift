@@ -5,15 +5,21 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { RouterProvider, createRouter, stringifySearchWith } from "@tanstack/react-router";
 import { HelmetProvider } from "react-helmet-async";
 import "@/main.css";
 
 // Import the generated route tree
 import { routeTree } from "@/routeTree.gen";
 
+// Default TanStack serializer, but keep `/` literal in the query (e.g. ?file=repo/src/x.ts).
+const stringifySearch = stringifySearchWith(JSON.stringify, JSON.parse);
+
 // Create a new router instance
-const router = createRouter({ routeTree });
+const router = createRouter({
+  routeTree,
+  stringifySearch: (search) => stringifySearch(search).replace(/%2F/g, "/"),
+});
 const queryClient = new QueryClient();
 
 // Register the router instance for type safety

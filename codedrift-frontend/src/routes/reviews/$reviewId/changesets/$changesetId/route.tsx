@@ -3,7 +3,7 @@
  * Since: 05/07/2026
  */
 import { useEffect, useState, type JSX } from "react";
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import FileBrowser from "@/components/file-browser.tsx";
@@ -13,9 +13,15 @@ import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import { fetchChangesetDiff, fetchChangesets } from "@/service/changeset-service.ts";
 import MarkdownContent from "@/components/markdown-content.tsx";
 import PageTitle from "@/components/page-title.tsx";
+import { getDiffFileDisplayPath } from "@/lib/diff-utils.ts";
+import { getFirstTreeFile } from "@/lib/file-tree.ts";
+
+type ChangesetDiffSearch = { file?: string };
 
 const ChangesetDiffLayout = (): JSX.Element => {
   const { reviewId, changesetId } = Route.useParams();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
 
   const diffQuery = useQuery({
     queryKey: ["changesetDiff", reviewId, changesetId],
@@ -46,6 +52,36 @@ const ChangesetDiffLayout = (): JSX.Element => {
   useEffect(() => {
     setDiffFiles(diffQuery.data?.files ?? []);
   }, [diffQuery.data, setDiffFiles]);
+
+  // Keep a valid file in the URL: default to the first file shown in the browser.
+  useEffect(() => {
+    const files = diffQuery.data?.files ?? [];
+
+    if (files.length === 0) {
+      return;
+    }
+
+    const hasValidFile =
+      search.file !== undefined &&
+      files.some((file) => getDiffFileDisplayPath(file) === search.file);
+
+    if (hasValidFile) {
+      return;
+    }
+
+    const firstFile = getFirstTreeFile(files);
+
+    if (!firstFile) {
+      return;
+    }
+
+    void navigate({
+      to: "/reviews/$reviewId/changesets/$changesetId",
+      params: { reviewId, changesetId },
+      search: { file: getDiffFileDisplayPath(firstFile) },
+      replace: true,
+    });
+  }, [diffQuery.data, search.file, navigate, reviewId, changesetId]);
 
   if (isLoading || errorMessage) {
     return (
@@ -103,6 +139,7 @@ const ChangesetDiffLayout = (): JSX.Element => {
                 <Link
                   to="/reviews/$reviewId/changesets/$changesetId"
                   params={{ reviewId, changesetId: previousChangeset.id }}
+                  search={{ file: undefined }}
                   title={previousChangeset.name}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                   <ChevronLeft size={14} className="shrink-0 relative bottom-px" />
@@ -115,6 +152,7 @@ const ChangesetDiffLayout = (): JSX.Element => {
                 <Link
                   to="/reviews/$reviewId/changesets/$changesetId"
                   params={{ reviewId, changesetId: nextChangeset.id }}
+                  search={{ file: undefined }}
                   title={nextChangeset.name}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                   <span className="max-w-80 truncate">
@@ -147,5 +185,8 @@ const ChangesetDiffLayout = (): JSX.Element => {
 };
 
 export const Route = createFileRoute("/reviews/$reviewId/changesets/$changesetId")({
+  validateSearch: (search: Record<string, unknown>): ChangesetDiffSearch => ({
+    file: typeof search.file === "string" ? search.file : undefined,
+  }),
   component: ChangesetDiffLayout,
 });

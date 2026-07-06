@@ -14,21 +14,19 @@ import {
   PanelLeftOpen,
   type LucideIcon,
 } from "lucide-react";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { cn } from "@/lib/utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import { useRuntimeSettingsStore } from "@/store/runtime-settings-store.ts";
 import type { DiffChangeType } from "@/@types/diff.ts";
 import type { ChangesetDiffFile } from "@/@types/changeset-diff.ts";
-import { getDiffFileDisplayPath, getDiffFileId } from "@/lib/diff-utils.ts";
-
-type FileTreeItem = {
-  id: string;
-  name: string;
-  path: string;
-  children: FileTreeItem[];
-  file?: ChangesetDiffFile;
-};
+import {
+  getDiffFileByDisplayPath,
+  getDiffFileDisplayPath,
+  getDiffFileId,
+} from "@/lib/diff-utils.ts";
+import { buildFileTree, getFirstTreeFile, type FileTreeItem } from "@/lib/file-tree.ts";
 
 type FileChangeConfig = {
   Icon: LucideIcon;
@@ -65,6 +63,7 @@ const SIDEBAR_DEFAULT_WIDTH = 300;
 const SIDEBAR_MAX_WIDTH = 1200;
 const SIDEBAR_RESIZE_STEP = 16;
 const SIDEBAR_COLLAPSED_WIDTH = 36;
+const CHANGESET_DIFF_ROUTE = "/reviews/$reviewId/changesets/$changesetId";
 
 type SidebarResizeState = {
   startX: number;
@@ -73,82 +72,6 @@ type SidebarResizeState = {
 
 const clampSidebarWidth = (width: number): number => {
   return Math.min(Math.max(width, SIDEBAR_MIN_WIDTH), SIDEBAR_MAX_WIDTH);
-};
-
-const createTreeItem = (id: string, name: string, path: string): FileTreeItem => ({
-  id,
-  name,
-  path,
-  children: [],
-});
-
-const sortFileTree = (items: FileTreeItem[]): FileTreeItem[] => {
-  return items
-    .map((item) => ({
-      ...item,
-      children: sortFileTree(item.children),
-    }))
-    .sort((firstItem, secondItem) => {
-      if (!firstItem.file && secondItem.file) {
-        return -1;
-      }
-
-      if (firstItem.file && !secondItem.file) {
-        return 1;
-      }
-
-      return firstItem.name.localeCompare(secondItem.name);
-    });
-};
-
-const collapseSingleChildFolders = (item: FileTreeItem): FileTreeItem => {
-  const children = item.children.map(collapseSingleChildFolders);
-  let node: FileTreeItem = { ...item, children };
-
-  while (!node.file && node.children.length === 1 && !node.children[0].file) {
-    const [child] = node.children;
-    node = {
-      ...node,
-      name: `${node.name}/${child.name}`,
-      path: child.path,
-      id: child.id,
-      children: child.children,
-    };
-  }
-
-  return node;
-};
-
-const buildFileTree = (diffFiles: ChangesetDiffFile[]): FileTreeItem[] => {
-  const root: FileTreeItem = createTreeItem("~", "~", "");
-
-  for (const file of diffFiles) {
-    const displayPath = getDiffFileDisplayPath(file);
-    const pathSegments = displayPath.split("/").filter(Boolean);
-    let currentItem = root;
-
-    pathSegments.forEach((segment, index) => {
-      const path = pathSegments.slice(0, index + 1).join("/");
-      const isFile = index === pathSegments.length - 1;
-      let child = currentItem.children.find((item) => item.name === segment);
-
-      if (!child) {
-        child = createTreeItem(path, segment, path);
-        currentItem.children.push(child);
-      }
-
-      if (isFile) {
-        child.id = getDiffFileId(file);
-        child.file = file;
-      }
-
-      currentItem = child;
-    });
-  }
-
-  root.children = sortFileTree(root.children.map(collapseSingleChildFolders));
-
-  return [root];
 };
 
 const getFileTitle = (file: ChangesetDiffFile): string => {
@@ -162,7 +85,7 @@ const getFileTitle = (file: ChangesetDiffFile): string => {
 const renderTreeItems = (
   items: FileTreeItem[],
   selectedFileId: string | null,
-  onSelectFile: (fileId: string) => void,
+  onSelectFile: (filePath: string) => void,
   collapsedFolderIds: Set<string>,
   onToggleFolder: (folderId: string) => void,
   level = 0,
@@ -200,7 +123,8 @@ const renderTreeItems = (
       ];
     }
 
-    const config = fileChangeConfig[item.file.changeType];
+    const file = item.file;
+    const config = fileChangeConfig[file.changeType];
     const Icon = config.Icon;
     const isSelected = selectedFileId === item.id;
 
@@ -208,8 +132,8 @@ const renderTreeItems = (
       <div key={item.id} className="relative w-full min-w-max">
         <button
           type="button"
-          title={getFileTitle(item.file)}
-          aria-label={`${config.label}: ${getFileTitle(item.file)}`}
+          title={getFileTitle(file)}
+          aria-label={`${config.label}: ${getFileTitle(file)}`}
           aria-pressed={isSelected}
           className={cn(
             "relative flex h-6 w-full min-w-max items-center gap-1.5 rounded px-3 text-left text-xs",
@@ -217,7 +141,7 @@ const renderTreeItems = (
             isSelected && "bg-nav-active/40",
           )}
           style={{ paddingLeft: `${level * TREE_INDENT_WIDTH + TREE_INDENT_WIDTH}px` }}
-          onClick={() => onSelectFile(item.id)}>
+          onClick={() => onSelectFile(getDiffFileDisplayPath(file))}>
           <Icon strokeWidth={1.8} className={cn("size-4 shrink-0", config.className)} />
           <span className="whitespace-nowrap">{item.name}</span>
         </button>
@@ -228,8 +152,9 @@ const renderTreeItems = (
 
 const FileBrowser = (): JSX.Element => {
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
-  const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
-  const setSelectedFileId = useDiffViewStore((state) => state.setSelectedFileId);
+  const params = useParams({ from: CHANGESET_DIFF_ROUTE });
+  const search = useSearch({ from: CHANGESET_DIFF_ROUTE });
+  const navigate = useNavigate();
 
   const isCollapsed = useRuntimeSettingsStore((state) => state.isFileBrowserCollapsed);
   const setIsCollapsed = useRuntimeSettingsStore((state) => state.setIsFileBrowserCollapsed);
@@ -239,6 +164,18 @@ const FileBrowser = (): JSX.Element => {
   const resizeStateRef = useRef<SidebarResizeState | null>(null);
 
   const fileTree = useMemo(() => buildFileTree(diffFiles), [diffFiles]);
+
+  const selectedFile =
+    getDiffFileByDisplayPath(diffFiles, search.file) ?? getFirstTreeFile(diffFiles);
+  const selectedFileId = selectedFile ? getDiffFileId(selectedFile) : null;
+
+  const selectFile = (filePath: string): void => {
+    void navigate({
+      to: CHANGESET_DIFF_ROUTE,
+      params,
+      search: { file: filePath },
+    });
+  };
 
   const startSidebarResize = (event: PointerEvent<HTMLDivElement>): void => {
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -330,13 +267,7 @@ const FileBrowser = (): JSX.Element => {
 
       <div className={`min-h-0 flex-1 overflow-auto pt-3 ${THIN_SCROLLBAR_CLASS}`}>
         <div className="inline-flex min-w-full flex-col pb-1 pr-1">
-          {renderTreeItems(
-            fileTree,
-            selectedFileId,
-            setSelectedFileId,
-            collapsedFolderIds,
-            toggleFolder,
-          )}
+          {renderTreeItems(fileTree, selectedFileId, selectFile, collapsedFolderIds, toggleFolder)}
         </div>
       </div>
 
