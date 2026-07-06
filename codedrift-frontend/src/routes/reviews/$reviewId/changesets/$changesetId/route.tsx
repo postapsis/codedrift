@@ -12,6 +12,7 @@ import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import { fetchChangesetDiff, fetchChangesets } from "@/service/changeset-service.ts";
 import MarkdownContent from "@/components/markdown-content.tsx";
+import PageTitle from "@/components/page-title.tsx";
 
 const ChangesetDiffLayout = (): JSX.Element => {
   const { reviewId, changesetId } = Route.useParams();
@@ -53,6 +54,7 @@ const ChangesetDiffLayout = (): JSX.Element => {
           "flex flex-1 items-center justify-center overflow-auto rounded bg-white " +
           `px-4 py-3 shadow-md ${THIN_SCROLLBAR_CLASS}`
         }>
+        <PageTitle title={changeset?.name ?? "Changeset"} />
         {isLoading && (
           <div className="flex items-center gap-1.5">
             <Loader />
@@ -66,6 +68,7 @@ const ChangesetDiffLayout = (): JSX.Element => {
 
   return (
     <div className="flex gap-2">
+      <PageTitle title={`${changeset?.order}. ${changeset?.name ?? "Changeset"}`} />
       <FileBrowser />
       <div className="flex min-w-0 flex-1 flex-col rounded bg-white px-4 py-3 shadow-md">
         <div className="flex flex-col gap-2 border-b border-muted pb-3">

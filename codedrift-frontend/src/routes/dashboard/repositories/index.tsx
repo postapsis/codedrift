@@ -23,6 +23,7 @@ import {
 import type { Repository } from "@/@types/repository.ts";
 import { toast } from "sonner";
 import RepositoryList from "@/components/repository-list.tsx";
+import PageTitle from "@/components/page-title.tsx";
 
 const DashboardRepositories = (): JSX.Element => {
   const queryClient = useQueryClient();
@@ -85,6 +86,7 @@ const DashboardRepositories = (): JSX.Element => {
 
   return (
     <div className="flex flex-col w-full max-w-xl 2k:max-w-2xl mt-10 mx-auto">
+      <PageTitle title="Repositories" />
       <div className="flex flex-col gap-4">
         <div className=" flex items-center justify-between">
           <h1 className="font-heading text-lg font-semibold">Repositories</h1>

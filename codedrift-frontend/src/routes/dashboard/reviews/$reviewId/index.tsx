@@ -14,6 +14,7 @@ import ReviewOverview from "@/components/review/review-overview.tsx";
 import ChangesetList from "@/components/review/changeset-list.tsx";
 import RedoReviewDialog from "@/components/review/redo-review-dialog.tsx";
 import { Button } from "@/components/ui/button.tsx";
+import PageTitle from "@/components/page-title.tsx";
 
 const ReviewDetail = (): JSX.Element => {
   const { reviewId } = Route.useParams();
@@ -86,6 +87,7 @@ const ReviewDetail = (): JSX.Element => {
         "mx-auto mt-10 flex w-full flex-col gap-4 " +
         (changesets.length > 0 ? "max-w-6xl" : "max-w-3xl")
       }>
+      <PageTitle title={review?.name ?? "Review"} />
       <div className="flex flex-col gap-2">
         <Link
           to="/dashboard/reviews"
