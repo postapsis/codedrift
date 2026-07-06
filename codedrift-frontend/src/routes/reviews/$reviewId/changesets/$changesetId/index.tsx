@@ -20,7 +20,7 @@ import DiffCommentCards, {
 
 const DIFF_MODE_MAP: Record<DiffMode, DiffModeEnum> = {
   unified: DiffModeEnum.Unified,
-  split: DiffModeEnum.SplitGitLab,
+  split: DiffModeEnum.SplitGitHub,
 };
 
 const buildCommentExtendData = (comments: ChangesetFileComment[]): CommentExtendData => {
