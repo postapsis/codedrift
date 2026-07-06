@@ -84,7 +84,7 @@ const DashboardRepositories = (): JSX.Element => {
   };
 
   return (
-    <div className="flex flex-col w-full max-w-3xl mt-10 mx-auto">
+    <div className="flex flex-col w-full max-w-xl 2k:max-w-2xl mt-10 mx-auto">
       <div className="flex flex-col gap-4">
         <div className=" flex items-center justify-between">
           <h1 className="font-heading text-lg font-semibold">Repositories</h1>

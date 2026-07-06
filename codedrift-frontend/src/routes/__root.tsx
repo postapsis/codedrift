@@ -12,7 +12,7 @@ const RootLayout = (): JSX.Element => (
   <div>
     <div className="flex flex-col h-screen max-h-screen px-2 pt-2.5 pb-3 gap-2">
       <Header />
-      <main className="flex-1 min-h-0 min-w-0 flex gap-2">
+      <main className="flex-1 min-h-0 min-w-0 flex gap-1 2k:gap-2">
         <Outlet />
       </main>
     </div>

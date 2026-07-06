@@ -67,7 +67,7 @@ const ChangesetDiffView = (): JSX.Element => {
 
   return (
     <div className={`flex h-full flex-col overflow-auto ${THIN_SCROLLBAR_CLASS}`}>
-      <section className="rounded border border-border">
+      <section className="rounded border border-border mb-8">
         <div className="flex items-center justify-between gap-3 border-b border-border bg-background px-3 py-2">
           <span className="font-mono text-xs text-foreground font-medium">
             {getDiffFileDisplayPath(selectedFile)}

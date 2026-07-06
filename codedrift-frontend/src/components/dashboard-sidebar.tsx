@@ -20,7 +20,7 @@ const navItems: NavItem[] = [
 
 const DashboardSidebar = (): JSX.Element => {
   return (
-    <div className="flex flex-none flex-col rounded px-2 py-2 w-[200px]">
+    <div className="flex flex-none flex-col rounded ps-1 pe-2 py-2 w-[200px]">
       <nav className="flex flex-col gap-1">
         {navItems.map(({ to, label, Icon }) => (
           <Link
