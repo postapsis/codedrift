@@ -101,6 +101,24 @@ const sortFileTree = (items: FileTreeItem[]): FileTreeItem[] => {
     });
 };
 
+const collapseSingleChildFolders = (item: FileTreeItem): FileTreeItem => {
+  const children = item.children.map(collapseSingleChildFolders);
+  let node: FileTreeItem = { ...item, children };
+
+  while (!node.file && node.children.length === 1 && !node.children[0].file) {
+    const [child] = node.children;
+    node = {
+      ...node,
+      name: `${node.name}/${child.name}`,
+      path: child.path,
+      id: child.id,
+      children: child.children,
+    };
+  }
+
+  return node;
+};
+
 const buildFileTree = (diffFiles: ChangesetDiffFile[]): FileTreeItem[] => {
   const root: FileTreeItem = createTreeItem("~", "~", "");
 
@@ -128,7 +146,7 @@ const buildFileTree = (diffFiles: ChangesetDiffFile[]): FileTreeItem[] => {
     });
   }
 
-  root.children = sortFileTree(root.children);
+  root.children = sortFileTree(root.children.map(collapseSingleChildFolders));
 
   return [root];
 };
