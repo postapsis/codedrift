@@ -212,7 +212,7 @@ const renderTreeItems = (
           aria-label={`${config.label}: ${getFileTitle(item.file)}`}
           aria-pressed={isSelected}
           className={cn(
-            "relative flex font-medium h-6 w-full min-w-max items-center gap-1.5 rounded px-3 text-left text-xs",
+            "relative flex h-6 w-full min-w-max items-center gap-1.5 rounded px-3 text-left text-xs",
             "text-foreground hover:bg-nav-active/40",
             isSelected && "bg-nav-active/40",
           )}
