@@ -75,9 +75,9 @@ const ChangesetDiffLayout = (): JSX.Element => {
                 <Link
                   to="/dashboard/reviews/$reviewId"
                   params={{ reviewId }}
-                  className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                  <ArrowLeft size={12} className="relative bottom-[0.5px]" />
-                  Back to review
+                  className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground relative top-[0.5px]">
+                  <ArrowLeft size={12} />
+                  <span className="relative top-[0.5px]">Back to review</span>
                 </Link>
 
                 {changeset?.description && (
@@ -123,7 +123,7 @@ const ChangesetDiffLayout = (): JSX.Element => {
             <div>
               <h1 className="font-heading text-base mb-1 font-semibold">{changeset.name}</h1>
               <div className="w-1/2">
-                <MarkdownContent markdown={changeset.description}  />
+                <MarkdownContent markdown={changeset.description} />
               </div>
             </div>
           )}
