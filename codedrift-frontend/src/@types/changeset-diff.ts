@@ -17,6 +17,7 @@ export type ChangesetDiff = {
     id: string;
     name: string;
     description: string;
+    order: number;
   };
   files: ChangesetDiffFile[];
 };

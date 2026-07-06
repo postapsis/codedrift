@@ -103,7 +103,9 @@ const ChangesetDiffLayout = (): JSX.Element => {
                   title={previousChangeset.name}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                   <ChevronLeft size={14} className="shrink-0 relative bottom-px" />
-                  <span className="max-w-80 truncate">{previousChangeset.name}</span>
+                  <span className="max-w-80 truncate">
+                    {previousChangeset.order}. {previousChangeset.name}
+                  </span>
                 </Link>
               )}
               {nextChangeset && (
@@ -112,7 +114,9 @@ const ChangesetDiffLayout = (): JSX.Element => {
                   params={{ reviewId, changesetId: nextChangeset.id }}
                   title={nextChangeset.name}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                  <span className="max-w-80 truncate">{nextChangeset.name}</span>
+                  <span className="max-w-80 truncate">
+                    {nextChangeset.order}. {nextChangeset.name}
+                  </span>
                   <ChevronRight size={14} className="shrink-0 relative bottom-px" />
                 </Link>
               )}
@@ -121,7 +125,9 @@ const ChangesetDiffLayout = (): JSX.Element => {
 
           {changeset && showOverview && (
             <div>
-              <h1 className="font-heading text-base mb-1 font-semibold">{changeset.name}</h1>
+              <h1 className="font-heading text-base mb-1 font-semibold">
+                {changeset.order}. {changeset.name}
+              </h1>
               <div className="w-1/2">
                 <MarkdownContent markdown={changeset.description} />
               </div>

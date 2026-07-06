@@ -36,6 +36,7 @@ const buildCommentExtendData = (comments: ChangesetFileComment[]): CommentExtend
 };
 
 const ChangesetDiffView = (): JSX.Element => {
+  const { reviewId } = Route.useParams();
   const diffFiles = useDiffViewStore((state) => state.diffFiles);
   const selectedFileId = useDiffViewStore((state) => state.selectedFileId);
   const fileDiffModeOverrides = useDiffViewStore((state) => state.fileDiffModeOverrides);
@@ -79,7 +80,10 @@ const ChangesetDiffView = (): JSX.Element => {
         </div>
         {selectedFile.summary && (
           <div className="border-b border-border bg-muted/30 px-3 py-2">
-            <MarkdownContent markdown={selectedFile.summary} markdownComponentClasses={{p: "text-[0.8rem]"}} />
+            <MarkdownContent
+              markdown={selectedFile.summary}
+              markdownComponentClasses={{ p: "text-[0.8rem]" }}
+            />
           </div>
         )}
 
@@ -99,7 +103,13 @@ const ChangesetDiffView = (): JSX.Element => {
           }}
           extendData={extendData}
           renderExtendLine={({ data }) =>
-            data?.length ? <DiffCommentCards comments={data} /> : null
+            data?.length ? (
+              <DiffCommentCards
+                comments={data}
+                reviewId={reviewId}
+                filePath={getDiffFileDisplayPath(selectedFile)}
+              />
+            ) : null
           }
           diffViewHighlight
           diffViewFontSize={codeFontSize}

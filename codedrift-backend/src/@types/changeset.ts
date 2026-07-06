@@ -5,6 +5,7 @@
 export type ChangesetCommentSide = "old" | "new";
 
 export type ChangesetFileComment = {
+  id: string;
   lineNumber: number;
   side: ChangesetCommentSide;
   comment: string;
@@ -25,6 +26,7 @@ export type ChangesetFileInput = {
 export type ChangesetInput = {
   name: string;
   description: string;
+  order: number;
   files: ChangesetFileInput[];
 };
 
@@ -41,5 +43,36 @@ export type Changeset = {
   reviewId: string;
   name: string;
   description: string;
+  order: number;
   files: ChangesetFile[];
+};
+
+export type ChangesetCommentInfo = {
+  commentId: string;
+  lineNumber: number;
+  side: ChangesetCommentSide;
+  comment: string;
+};
+
+export type ChangesetFileInfo = {
+  filePath: string;
+  summary: string;
+  comments: ChangesetCommentInfo[];
+};
+
+export type ChangesetInfo = {
+  changesetId: string;
+  name: string;
+  description: string;
+  order: number;
+  files: ChangesetFileInfo[];
+};
+
+export type ChangesetCommentDetail = {
+  commentId: string;
+  changesetId: string;
+  filePath: string;
+  lineNumber: number;
+  side: ChangesetCommentSide;
+  comment: string;
 };

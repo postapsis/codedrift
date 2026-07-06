@@ -24,7 +24,7 @@ const ChangesetList = ({ reviewId, changesets }: ChangesetListProps): JSX.Elemen
             "flex flex-col gap-1 rounded-md border border-border p-3 " +
             "transition-colors hover:border-foreground/30 hover:bg-nav-active/20"
           }>
-          <span className="text-sm font-semibold text-foreground">{changeset.name}</span>
+          <span className="text-sm font-semibold text-foreground">{changeset.order}. {changeset.name}</span>
           <span className="line-clamp-3 text-[0.8rem] text-muted-foreground">
             {changeset.description}
           </span>

@@ -7,10 +7,18 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
   addChangeset,
-  addReviewOverview,
+  addComment,
   ChangesetInputError,
-  getChangesetFiles,
+  deleteChangeset,
+  deleteComment,
+  editComment,
+  getChangesetsDetails,
+  getComment,
   getReviewInfo,
+  removeChangesetFile,
+  setChangesetFile,
+  setReviewOverview,
+  updateChangeset,
 } from "../tools/changeset-tools.ts";
 
 const toToolResult = <T>(run: () => T): CallToolResult => {
@@ -82,15 +90,16 @@ export const createChangesetMcpServer = (): McpServer => {
   );
 
   server.registerTool(
-    "add_review_overview",
+    "set_review_overview",
     {
-      title: "Add review overview",
+      title: "Set review overview",
       description:
-        "Set the review's overview: a comprehensive markdown summary of what the change/PR " +
-        "does — its goals, architecture, and how data flows through the changed code. " +
-        "Illustrate flows and structure with mermaid diagrams (```mermaid fenced blocks). " +
-        "Include code snippets only briefly and only when essential; prefer prose and " +
-        "diagrams. Overwrites any existing overview. Call this BEFORE adding changesets.",
+        "Set or overwrite the review's overview: a comprehensive markdown summary of what the " +
+        "change/PR does — its goals, architecture, and how data flows through the changed " +
+        "code. Illustrate flows and structure with mermaid diagrams (```mermaid fenced " +
+        "blocks). Include code snippets only briefly and only when essential; prefer prose " +
+        "and diagrams. Call this BEFORE adding changesets when creating a review; call it " +
+        "again to refresh a stale overview.",
       inputSchema: {
         reviewId: z.string().describe("Review id (36-character UUIDv7)."),
         overview: z
@@ -98,7 +107,7 @@ export const createChangesetMcpServer = (): McpServer => {
           .describe("The overview as markdown, with mermaid diagrams in fenced code blocks."),
       },
     },
-    ({ reviewId, overview }) => toToolResult(() => addReviewOverview(reviewId, overview)),
+    ({ reviewId, overview }) => toToolResult(() => setReviewOverview(reviewId, overview)),
   );
 
   server.registerTool(
@@ -112,28 +121,186 @@ export const createChangesetMcpServer = (): McpServer => {
       inputSchema: {
         reviewId: z.string().describe("Review id (36-character UUIDv7)."),
         name: z.string().describe("Human-readable changeset name."),
-        description: z.string().describe("What this changeset groups together and why."),
+        description: z
+          .string()
+          .describe("What this changeset groups together and why as markdown."),
+        order: z
+          .number()
+          .int()
+          .describe(
+            "Position of this changeset in the review's reading order " +
+              "(1-based; lower = read earlier).",
+          ),
         files: z
           .array(changesetFileSchema)
           .min(1)
           .describe("The changed files that make up this changeset."),
       },
     },
-    ({ reviewId, name, description, files }) =>
-      toToolResult(() => addChangeset(reviewId, { name, description, files })),
+    ({ reviewId, name, description, order, files }) =>
+      toToolResult(() => addChangeset(reviewId, { name, description, order, files })),
   );
 
   server.registerTool(
-    "get_changeset_files",
+    "get_changesets_details",
     {
-      title: "Get changeset files",
+      title: "Get changesets details",
       description:
-        "Return the absolute paths of all files already grouped into changesets of a review.",
+        "Return all changesets of a review with their id, name, description, order, and files " +
+        "(absolute paths, summaries, and line-anchored comments with their comment ids).",
       inputSchema: {
         reviewId: z.string().describe("Review id (36-character UUIDv7)."),
       },
     },
-    ({ reviewId }) => toToolResult(() => getChangesetFiles(reviewId)),
+    ({ reviewId }) => toToolResult(() => getChangesetsDetails(reviewId)),
+  );
+
+  server.registerTool(
+    "update_changeset",
+    {
+      title: "Update changeset",
+      description:
+        "Update a changeset's name, description and/or reading-order position. At least one " +
+        "field is required; omitted fields keep their current values.",
+      inputSchema: {
+        reviewId: z.string().describe("Review id (36-character UUIDv7)."),
+        changesetId: z.string().describe("Changeset id (36-character UUIDv7)."),
+        name: z.string().optional().describe("New human-readable changeset name."),
+        description: z
+          .string()
+          .optional()
+          .describe("New description of what this changeset groups together and why."),
+        order: z
+          .number()
+          .int()
+          .optional()
+          .describe("New position in the review's reading order (1-based; lower = earlier)."),
+      },
+    },
+    ({ reviewId, changesetId, name, description, order }) =>
+      toToolResult(() => updateChangeset(reviewId, changesetId, { name, description, order })),
+  );
+
+  server.registerTool(
+    "set_changeset_file",
+    {
+      title: "Set changeset file",
+      description:
+        "Add a file to a changeset, or update its summary if it is already in the changeset. " +
+        "Comments may only be passed when adding — for an existing file use add_comment " +
+        "instead. A file may belong to only one changeset of a review.",
+      inputSchema: {
+        reviewId: z.string().describe("Review id (36-character UUIDv7)."),
+        changesetId: z.string().describe("Changeset id (36-character UUIDv7)."),
+        ...changesetFileSchema.shape,
+      },
+    },
+    ({ reviewId, changesetId, filePath, summary, comments }) =>
+      toToolResult(() => setChangesetFile(reviewId, changesetId, { filePath, summary, comments })),
+  );
+
+  server.registerTool(
+    "remove_changeset_file",
+    {
+      title: "Remove changeset file",
+      description:
+        "Remove a file from a changeset, including its comments; the freed file can then be " +
+        "added to another changeset. The last file of a changeset cannot be removed — use " +
+        "delete_changeset instead.",
+      inputSchema: {
+        reviewId: z.string().describe("Review id (36-character UUIDv7)."),
+        changesetId: z.string().describe("Changeset id (36-character UUIDv7)."),
+        filePath: z
+          .string()
+          .describe("ABSOLUTE filesystem path of a file currently in the changeset."),
+      },
+    },
+    ({ reviewId, changesetId, filePath }) =>
+      toToolResult(() => removeChangesetFile(reviewId, changesetId, filePath)),
+  );
+
+  server.registerTool(
+    "get_comment",
+    {
+      title: "Get comment",
+      description:
+        "Return a single review comment by id: its changeset, absolute file path, " +
+        "line number, side, and text.",
+      inputSchema: {
+        reviewId: z.string().describe("Review id (36-character UUIDv7)."),
+        commentId: z.string().describe("Comment id (36-character UUIDv7)."),
+      },
+    },
+    ({ reviewId, commentId }) => toToolResult(() => getComment(reviewId, commentId)),
+  );
+
+  server.registerTool(
+    "add_comment",
+    {
+      title: "Add comment",
+      description:
+        "Add a line-anchored review comment to a file that already belongs to a changeset " +
+        "of the review.",
+      inputSchema: {
+        reviewId: z.string().describe("Review id (36-character UUIDv7)."),
+        changesetId: z.string().describe("Changeset id (36-character UUIDv7)."),
+        filePath: z
+          .string()
+          .describe("ABSOLUTE filesystem path of a file already in the changeset."),
+        ...changesetFileCommentSchema.shape,
+      },
+    },
+    ({ reviewId, changesetId, filePath, lineNumber, side, comment }) =>
+      toToolResult(() =>
+        addComment(reviewId, changesetId, filePath, { lineNumber, side, comment }),
+      ),
+  );
+
+  server.registerTool(
+    "edit_comment",
+    {
+      title: "Edit comment",
+      description:
+        "Update an existing review comment by id. The comment text is required; " +
+        "line number and side keep their current values when omitted.",
+      inputSchema: {
+        reviewId: z.string().describe("Review id (36-character UUIDv7)."),
+        commentId: z.string().describe("Comment id (36-character UUIDv7)."),
+        lineNumber: changesetFileCommentSchema.shape.lineNumber.optional(),
+        side: changesetFileCommentSchema.shape.side,
+        comment: changesetFileCommentSchema.shape.comment,
+      },
+    },
+    ({ reviewId, commentId, lineNumber, side, comment }) =>
+      toToolResult(() => editComment(reviewId, commentId, { comment, lineNumber, side })),
+  );
+
+  server.registerTool(
+    "delete_comment",
+    {
+      title: "Delete comment",
+      description: "Delete a review comment by id.",
+      inputSchema: {
+        reviewId: z.string().describe("Review id (36-character UUIDv7)."),
+        commentId: z.string().describe("Comment id (36-character UUIDv7)."),
+      },
+    },
+    ({ reviewId, commentId }) => toToolResult(() => deleteComment(reviewId, commentId)),
+  );
+
+  server.registerTool(
+    "delete_changeset",
+    {
+      title: "Delete changeset",
+      description:
+        "Delete a changeset of a review, including all its files and comments. " +
+        "The freed files can then be added to new changesets.",
+      inputSchema: {
+        reviewId: z.string().describe("Review id (36-character UUIDv7)."),
+        changesetId: z.string().describe("Changeset id (36-character UUIDv7)."),
+      },
+    },
+    ({ reviewId, changesetId }) => toToolResult(() => deleteChangeset(reviewId, changesetId)),
   );
 
   return server;

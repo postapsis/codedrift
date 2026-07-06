@@ -5,6 +5,7 @@
 export type ChangesetCommentSide = "old" | "new";
 
 export type ChangesetFileComment = {
+  id: string;
   lineNumber: number;
   side: ChangesetCommentSide;
   comment: string;
@@ -23,5 +24,6 @@ export type Changeset = {
   reviewId: string;
   name: string;
   description: string;
+  order: number;
   files: ChangesetFile[];
 };

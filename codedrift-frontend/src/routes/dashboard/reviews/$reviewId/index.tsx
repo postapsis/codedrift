@@ -2,19 +2,22 @@
  * Author: Jamius Siam
  * Since: 25/06/2026
  */
-import type { JSX } from "react";
+import { type JSX, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, GitBranch } from "lucide-react";
+import { ArrowLeft, GitBranch, RefreshCw } from "lucide-react";
 import { fetchReviews, fetchReviewOverview } from "@/service/review-service.ts";
 import { fetchChangesets } from "@/service/changeset-service.ts";
 import Loader from "@/components/loader.tsx";
 import ReviewSetup from "@/components/review/review-setup.tsx";
 import ReviewOverview from "@/components/review/review-overview.tsx";
 import ChangesetList from "@/components/review/changeset-list.tsx";
+import RedoReviewDialog from "@/components/review/redo-review-dialog.tsx";
+import { Button } from "@/components/ui/button.tsx";
 
 const ReviewDetail = (): JSX.Element => {
   const { reviewId } = Route.useParams();
+  const [showRedoDialog, setShowRedoDialog] = useState(false);
 
   const reviewsQuery = useQuery({
     queryKey: ["reviews"],
@@ -90,7 +93,15 @@ const ReviewDetail = (): JSX.Element => {
           <ArrowLeft size={12} />
           Back to reviews
         </Link>
-        <h1 className="font-heading text-xl font-semibold">{review?.name ?? "Review"}</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-heading text-xl font-semibold">{review?.name ?? "Review"}</h1>
+          {changesets.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => setShowRedoDialog(true)}>
+              <RefreshCw size={14} />
+              Redo Review
+            </Button>
+          )}
+        </div>
         {review && review.repositories.length > 0 && (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {review.repositories.map((repository) => (
@@ -99,9 +110,7 @@ const ReviewDetail = (): JSX.Element => {
                 className="flex items-center gap-4 text-xs text-foreground/80">
                 <div className="flex gap-1.25 items-center">
                   <GitBranch size={12} className="shrink-0" strokeWidth={2.5} />
-                  <span className="font-medium text-[0.8rem]">
-                    {repository.repositoryName}
-                  </span>
+                  <span className="font-medium text-[0.8rem]">{repository.repositoryName}</span>
                 </div>
 
                 <div className="rounded border border-border px-2 py-0.5">
@@ -118,6 +127,12 @@ const ReviewDetail = (): JSX.Element => {
       </div>
 
       <div className="mt-5">{renderBody()}</div>
+
+      <RedoReviewDialog
+        reviewId={reviewId}
+        open={showRedoDialog}
+        onOpenChange={setShowRedoDialog}
+      />
     </div>
   );
 };

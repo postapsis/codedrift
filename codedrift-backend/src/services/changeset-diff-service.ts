@@ -65,6 +65,7 @@ export class ChangesetDiffService {
         id: changeset.id,
         name: changeset.name,
         description: changeset.description,
+        order: changeset.order,
       },
       files,
     };
