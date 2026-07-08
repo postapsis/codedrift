@@ -1,25 +1,27 @@
 ### Status
 
-This project is still in development. Expect some rough edges.
+This project is still in the alpha stage. Expect some rough edges.
 
-### How to run the developmental version
+### How to run the alpha version
 
-1. Clone the repository.
-2. Install all the dependencies with `npm install` in both the `codedrift-backend` and `codedrift-frontend` directories.
-3. Run `npm run dev` in both the `codedrift-backend` and `codedrift-frontend` directories.
-4. Open `http://localhost:5173` in your browser to see the Codedrift UI.
-5. Add the MCP server for `codedrift` by adding this URL to your Agent's MCP config:
+1. Install via `npm i -g @postapsis/codedrift`
+2. Open `http://localhost:19019/app` (or your own port via the `-p` flag) in your browser to see the Codedrift UI.
+3. Add the MCP server for `codedrift` by following the instructions below.
 
-MCP URL: `http://localhost:3000/changeset-mcp`
 
-Add to Claude: `claude mcp add --transport http codedrift-changeset http://localhost:3000/changeset-mcp`
+### Adding the MCP server for Codedrift to your Agent
+
+HTTP MCP URL: `http://localhost:19019/changeset-mcp`
+
+Add to Claude: `claude mcp add --transport http codedrift-changeset http://localhost:19019/changeset-mcp`
 
 Add to Other Agents:
+
 ```json
 {
   "mcpServers": {
     "codedrift-changeset": {
-      "serverUrl": "http://localhost:3000/changeset-mcp"
+      "serverUrl": "http://localhost:300190190/changeset-mcp"
     }
   }
 }
