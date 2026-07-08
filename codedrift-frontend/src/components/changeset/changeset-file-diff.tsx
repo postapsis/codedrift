@@ -2,7 +2,7 @@
  * Author: Jamius Siam
  * Since: 08/07/2026
  */
-import { type JSX, useEffect, useMemo } from "react";
+import { type JSX, useEffect, useMemo, useRef } from "react";
 import { DiffModeEnum, DiffView, setEnableFastDiffTemplate } from "@git-diff-view/react";
 import "@git-diff-view/react/styles/diff-view-pure.css";
 import MarkdownContent from "@/components/markdown-content.tsx";
@@ -52,6 +52,7 @@ const ChangesetFileDiff = ({ reviewId, file }: ChangesetFileDiffProps): JSX.Elem
   const copyPathWithRepoName = useSettingsStore((state) => state.copyPathWithRepoName);
   const reviewedFiles = useReviewProgressStore((state) => state.reviewedFiles);
   const setFileReviewed = useReviewProgressStore((state) => state.setFileReviewed);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setEnableFastDiffTemplate(true);
@@ -88,8 +89,42 @@ const ChangesetFileDiff = ({ reviewId, file }: ChangesetFileDiffProps): JSX.Elem
     };
   }, [isReviewed, progressFileKey, setFileReviewed]);
 
+  // ArrowUp/ArrowDown page-scroll the diff, like PageUp/PageDown.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.metaKey || event.ctrlKey || event.altKey || isEditableTarget(event.target)) {
+        return;
+      }
+
+      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") {
+        return;
+      }
+
+      const container = scrollContainerRef.current;
+
+      if (!container) {
+        return;
+      }
+
+      event.preventDefault();
+      const pageAmount = container.clientHeight * 0.6;
+      container.scrollBy({
+        top: event.key === "ArrowDown" ? pageAmount : -pageAmount,
+        behavior: "smooth",
+      });
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return (): void => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   return (
-    <div className={`flex h-full flex-col overflow-auto ${THIN_SCROLLBAR_CLASS}`}>
+    <div
+      ref={scrollContainerRef}
+      className={`flex h-full flex-col overflow-auto ${THIN_SCROLLBAR_CLASS}`}>
       <section className="rounded border border-border mb-8">
         <div className="flex items-center justify-between gap-3 border-b border-border bg-background px-3 py-2">
           <div className="flex items-center gap-0.5">
