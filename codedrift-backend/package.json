@@ -1,6 +1,6 @@
 {
   "name": "@postapsis/codedrift",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "main": "dist/main.js",
   "type": "module",
   "packageManager": "pnpm@11.5.1",
@@ -12,8 +12,7 @@
   },
   "files": [
     "dist",
-    "public",
-    "README.md"
+    "public"
   ],
   "scripts": {
     "dev": "tsx --watch src/main.ts",

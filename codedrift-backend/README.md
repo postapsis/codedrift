@@ -21,7 +21,7 @@ Add to Other Agents:
 {
   "mcpServers": {
     "codedrift-changeset": {
-      "serverUrl": "http://localhost:300190190/changeset-mcp"
+      "serverUrl": "http://localhost:19019/changeset-mcp"
     }
   }
 }
