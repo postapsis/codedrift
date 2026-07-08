@@ -38,6 +38,12 @@ export class GitService {
     return branchSummary.all;
   }
 
+  static async isBranch(repositoryPath: string, ref: string): Promise<boolean> {
+    const branchSummary = await simpleGit(repositoryPath).branchLocal();
+
+    return branchSummary.all.includes(ref);
+  }
+
   private static async isDirectory(targetPath: string): Promise<boolean> {
     try {
       const stats = await stat(targetPath);

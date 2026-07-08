@@ -41,9 +41,20 @@ db.exec(`
     repository_id TEXT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
     base_ref TEXT NOT NULL,
     head_ref TEXT NOT NULL,
+    ref_type TEXT NOT NULL DEFAULT 'branch' CHECK (ref_type IN ('branch', 'commit')),
     UNIQUE (review_id, repository_id)
   );
 `);
+
+// Migrate pre-existing databases: add ref_type if the table predates it.
+try {
+  db.exec(
+    "ALTER TABLE review_repositories ADD COLUMN ref_type TEXT NOT NULL DEFAULT 'branch' " +
+      "CHECK (ref_type IN ('branch', 'commit'))",
+  );
+} catch {
+  // Column already exists — nothing to migrate.
+}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS changesets (

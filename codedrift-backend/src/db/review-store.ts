@@ -5,6 +5,7 @@
 import { uuidv7 } from "uuidv7";
 import { db } from "./database.ts";
 import type {
+  RefType,
   Review,
   ReviewInfo,
   ReviewOverview,
@@ -31,6 +32,7 @@ type ReviewRepositoryInfoRow = {
   repository_path: string;
   base_ref: string;
   head_ref: string;
+  ref_type: RefType;
 };
 
 type ReviewOverviewRow = {
@@ -42,6 +44,7 @@ export type ReviewRepositoryInput = {
   repositoryId: string;
   baseRef: string;
   headRef: string;
+  refType: RefType;
 };
 
 const insertReviewStatement = db.prepare(
@@ -49,8 +52,8 @@ const insertReviewStatement = db.prepare(
 );
 
 const insertReviewRepositoryStatement = db.prepare(
-  "INSERT INTO review_repositories (id, review_id, repository_id, base_ref, head_ref) " +
-    "VALUES (@id, @reviewId, @repositoryId, @baseRef, @headRef)",
+  "INSERT INTO review_repositories (id, review_id, repository_id, base_ref, head_ref, ref_type) " +
+    "VALUES (@id, @reviewId, @repositoryId, @baseRef, @headRef, @refType)",
 );
 
 const selectReviewByIdStatement = db.prepare("SELECT * FROM reviews WHERE id = @id");
@@ -67,7 +70,7 @@ const selectReviewRepositoriesStatement = db.prepare(
 
 const selectReviewInfoRepositoriesStatement = db.prepare(
   "SELECT r.id AS repository_id, r.name AS repository_name, r.path AS repository_path, " +
-    "rr.base_ref, rr.head_ref " +
+    "rr.base_ref, rr.head_ref, rr.ref_type " +
     "FROM review_repositories rr " +
     "JOIN repositories r ON r.id = rr.repository_id " +
     "WHERE rr.review_id = @reviewId " +
@@ -109,6 +112,7 @@ const insertReview = db.transaction((name: string, items: ReviewRepositoryInput[
       repositoryId: item.repositoryId,
       baseRef: item.baseRef,
       headRef: item.headRef,
+      refType: item.refType,
     });
   }
 
@@ -133,6 +137,7 @@ const mapReviewRepositoryInfoRow = (row: ReviewRepositoryInfoRow): ReviewReposit
   repositoryPath: row.repository_path,
   baseRef: row.base_ref,
   headRef: row.head_ref,
+  refType: row.ref_type,
 });
 
 export const getReviewInfo = (id: string): ReviewInfo | null => {

@@ -4,6 +4,7 @@
  */
 import { simpleGit, type SimpleGit } from "simple-git";
 import type { DiffChangeType, DiffFileData } from "../@types/diff.ts";
+import type { RefType } from "../@types/review.ts";
 
 type DiffFileMetadata = Omit<DiffFileData, "oldFileContent" | "newFileContent">;
 
@@ -12,14 +13,33 @@ export class DiffService {
     repoPath: string,
     baseRef: string,
     headRef: string,
+    refType: RefType,
   ): Promise<DiffFileData[]> {
     const git = simpleGit(repoPath);
-    const diffContent = await git.diff([baseRef, headRef]);
+    const effectiveBaseRef = await DiffService.resolveBaseRef(git, baseRef, headRef, refType);
+    const diffContent = await git.diff([effectiveBaseRef, headRef]);
     const diffFiles = DiffService.parseDiffFiles(diffContent);
 
     return Promise.all(
-      diffFiles.map((diffFile) => DiffService.attachFileContent(git, baseRef, headRef, diffFile)),
+      diffFiles.map((diffFile) =>
+        DiffService.attachFileContent(git, effectiveBaseRef, headRef, diffFile),
+      ),
     );
+  }
+
+  private static async resolveBaseRef(
+    git: SimpleGit,
+    baseRef: string,
+    headRef: string,
+    refType: RefType,
+  ): Promise<string> {
+    if (refType === "commit") {
+      return `${baseRef}^`;
+    }
+
+    const mergeBase = await git.raw(["merge-base", baseRef, headRef]);
+
+    return mergeBase.trim();
   }
 
   private static parseDiffFiles(diffContent: string): DiffFileMetadata[] {

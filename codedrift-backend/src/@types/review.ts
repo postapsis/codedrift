@@ -2,6 +2,8 @@
  * Author: Jamius Siam
  * Since: 23/06/2026
  */
+export type RefType = "branch" | "commit";
+
 export type ReviewRepository = {
   repositoryId: string;
   repositoryName: string;
@@ -22,6 +24,7 @@ export type ReviewRepositoryInfo = {
   repositoryPath: string;
   baseRef: string;
   headRef: string;
+  refType: RefType;
 };
 
 export type ReviewOverview = {

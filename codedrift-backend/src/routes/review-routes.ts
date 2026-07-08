@@ -7,6 +7,7 @@ import { getRepositoryById } from "../db/repository-store.ts";
 import { saveReview, listReviews, deleteReview, getReviewOverview } from "../db/review-store.ts";
 import { getChangesets } from "../db/changeset-store.ts";
 import { ChangesetDiffService } from "../services/changeset-diff-service.ts";
+import { GitService } from "../services/git-service.ts";
 import type { ApiResponse } from "../@types/api-response.ts";
 import type { Review, ReviewOverview } from "../@types/review.ts";
 import type { Changeset } from "../@types/changeset.ts";
@@ -87,7 +88,16 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
         return { success: false, message: "A repository can only be added once", data: null };
       }
 
-      const review = saveReview(name, items);
+      const itemsWithRefType = await Promise.all(
+        items.map(async (item) => {
+          const repository = getRepositoryById(item.repositoryId)!;
+          const isBranch = await GitService.isBranch(repository.path, item.baseRef);
+
+          return { ...item, refType: isBranch ? ("branch" as const) : ("commit" as const) };
+        }),
+      );
+
+      const review = saveReview(name, itemsWithRefType);
 
       return { success: true, message: null, data: review };
     },

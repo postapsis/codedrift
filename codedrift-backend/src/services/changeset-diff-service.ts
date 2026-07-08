@@ -37,6 +37,7 @@ export class ChangesetDiffService {
         repository.repositoryPath,
         repository.baseRef,
         repository.headRef,
+        repository.refType,
       );
 
       diffIndexByRepository.set(repositoryId, ChangesetDiffService.indexDiffFiles(diffFiles));
