@@ -3,7 +3,6 @@
  * Since: 30/05/2026
  */
 import { createRootRoute, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import type { JSX } from "react";
 import Header from "@/components/header.tsx";
 import { Toaster } from "@/components/ui/sonner";
@@ -17,7 +16,6 @@ const RootLayout = (): JSX.Element => (
       </main>
     </div>
     <Toaster />
-    <TanStackRouterDevtools position={"bottom-left"} />
   </div>
 );
 

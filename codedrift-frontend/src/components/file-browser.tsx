@@ -10,6 +10,7 @@ import {
   FilePlus,
   FileSymlink,
   FileX,
+  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   type LucideIcon,
@@ -19,6 +20,7 @@ import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { cn } from "@/lib/utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import { useRuntimeSettingsStore } from "@/store/runtime-settings-store.ts";
+import { getReviewProgressFileKey, useReviewProgressStore } from "@/store/review-progress-store.ts";
 import type { DiffChangeType } from "@/@types/diff.ts";
 import type { ChangesetDiffFile } from "@/@types/changeset-diff.ts";
 import {
@@ -144,6 +146,12 @@ const renderTreeItems = (
           onClick={() => onSelectFile(getDiffFileDisplayPath(file))}>
           <Icon strokeWidth={1.8} className={cn("size-4 shrink-0", config.className)} />
           <span className="whitespace-nowrap">{item.name}</span>
+          {file.comments.length > 0 && (
+            <span className="flex ms-1 shrink-0 items-center gap-0.5 text-muted-foreground">
+              <MessageSquare className="size-3" strokeWidth={2.5} />
+              {file.comments.length}
+            </span>
+          )}
         </button>
       </div>
     );
@@ -158,12 +166,24 @@ const FileBrowser = (): JSX.Element => {
 
   const isCollapsed = useRuntimeSettingsStore((state) => state.isFileBrowserCollapsed);
   const setIsCollapsed = useRuntimeSettingsStore((state) => state.setIsFileBrowserCollapsed);
+  const reviewedFiles = useReviewProgressStore((state) => state.reviewedFiles);
 
   const [collapsedFolderIds, setCollapsedFolderIds] = useState<Set<string>>(() => new Set());
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
   const resizeStateRef = useRef<SidebarResizeState | null>(null);
 
   const fileTree = useMemo(() => buildFileTree(diffFiles), [diffFiles]);
+
+  const reviewedFileCount = diffFiles.filter(
+    (file) =>
+      reviewedFiles[
+        getReviewProgressFileKey(
+          params.reviewId,
+          file.repositoryId,
+          getDiffFileDisplayPath(file, false),
+        )
+      ],
+  ).length;
 
   const selectedFile =
     getDiffFileByDisplayPath(diffFiles, search.file) ?? getFirstTreeFile(diffFiles);
@@ -262,7 +282,9 @@ const FileBrowser = (): JSX.Element => {
             <PanelLeftClose className="size-4" strokeWidth={1.8} />
           </button>
         </div>
-        <p className="text-xs text-muted-foreground">{diffFiles.length} changed files</p>
+        <p className="text-xs text-muted-foreground">
+          {reviewedFileCount}/{diffFiles.length} files reviewed
+        </p>
       </div>
 
       <div className={`min-h-0 flex-1 overflow-auto pt-3 ${THIN_SCROLLBAR_CLASS}`}>

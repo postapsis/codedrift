@@ -4,8 +4,9 @@
  */
 import type { JSX } from "react";
 import { Link } from "@tanstack/react-router";
-import { FileDiff } from "lucide-react";
-import type { Changeset } from "@/@types/changeset.ts";
+import { CircleCheck, FileDiff } from "lucide-react";
+import type { Changeset, ChangesetFile } from "@/@types/changeset.ts";
+import { getReviewProgressFileKey, useReviewProgressStore } from "@/store/review-progress-store.ts";
 
 interface ChangesetListProps {
   reviewId: string;
@@ -13,6 +14,14 @@ interface ChangesetListProps {
 }
 
 const ChangesetList = ({ reviewId, changesets }: ChangesetListProps): JSX.Element => {
+  const reviewedFiles = useReviewProgressStore((state) => state.reviewedFiles);
+
+  const countReviewedFiles = (files: ChangesetFile[]): number => {
+    return files.filter(
+      (file) => reviewedFiles[getReviewProgressFileKey(reviewId, file.repositoryId, file.filePath)],
+    ).length;
+  };
+
   return (
     <div className="flex flex-col gap-3">
       {changesets.map((changeset) => (
@@ -24,13 +33,21 @@ const ChangesetList = ({ reviewId, changesets }: ChangesetListProps): JSX.Elemen
             "flex flex-col gap-1 rounded-md border border-border p-3 " +
             "transition-colors hover:border-foreground/30 hover:bg-nav-active/20"
           }>
-          <span className="text-sm font-semibold text-foreground">{changeset.order}. {changeset.name}</span>
+          <span className="text-sm font-semibold text-foreground">
+            {changeset.order}. {changeset.name}
+          </span>
           <span className="line-clamp-3 text-[0.8rem] text-muted-foreground">
             {changeset.description}
           </span>
-          <span className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
-            <FileDiff size={12} />
-            {changeset.files.length} {changeset.files.length === 1 ? "file" : "files"}
+          <span className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <FileDiff size={12} />
+              {changeset.files.length} {changeset.files.length === 1 ? "file" : "files"}
+            </span>
+            <span className="flex items-center gap-1">
+              <CircleCheck size={12} />
+              {countReviewedFiles(changeset.files)}/{changeset.files.length} reviewed
+            </span>
           </span>
         </Link>
       ))}
