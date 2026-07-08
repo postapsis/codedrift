@@ -115,7 +115,7 @@ const ReviewRepositoryEntry = ({
 
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium">
-            Base {entry.refMode === "commit" ? "Commit" : "Branch"}
+            Base {entry.refMode === "commit" ? "Commit (Inclusive)" : "Branch"}
           </label>
           {entry.refMode === "branch" ? (
             <Select
