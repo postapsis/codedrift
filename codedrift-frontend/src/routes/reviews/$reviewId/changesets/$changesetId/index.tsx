@@ -2,11 +2,13 @@
  * Author: Jamius Siam
  * Since: 05/07/2026
  */
-import { type JSX, useEffect, useMemo } from "react";
+import { type JSX, useEffect, useMemo, useState } from "react";
 import { DiffModeEnum, DiffView, setEnableFastDiffTemplate } from "@git-diff-view/react";
 import "@git-diff-view/react/styles/diff-view-pure.css";
 import { createFileRoute } from "@tanstack/react-router";
+import { Check, Copy } from "lucide-react";
 import MarkdownContent from "@/components/markdown-content.tsx";
+import { Button } from "@/components/ui/button.tsx";
 import DiffModeToggle from "@/components/settings/diff-mode-toggle.tsx";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
@@ -26,6 +28,22 @@ import DiffCommentCards, {
 const DIFF_MODE_MAP: Record<DiffMode, DiffModeEnum> = {
   unified: DiffModeEnum.Unified,
   split: DiffModeEnum.SplitGitHub,
+};
+
+const CopyPathButton = ({ value }: { value: string }): JSX.Element => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (): Promise<void> => {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <Button variant="ghost" size="icon-xs" onClick={handleCopy} aria-label="Copy file path">
+      {copied ? <Check /> : <Copy />}
+    </Button>
+  );
 };
 
 const buildCommentExtendData = (comments: ChangesetFileComment[]): CommentExtendData => {
@@ -76,9 +94,12 @@ const ChangesetDiffView = (): JSX.Element => {
     <div className={`flex h-full flex-col overflow-auto ${THIN_SCROLLBAR_CLASS}`}>
       <section className="rounded border border-border mb-8">
         <div className="flex items-center justify-between gap-3 border-b border-border bg-background px-3 py-2">
-          <span className="font-mono text-xs text-foreground font-medium">
-            {getDiffFileDisplayPath(selectedFile)}
-          </span>
+          <div className="flex items-center gap-0.5">
+            <span className="font-mono text-xs text-foreground font-medium">
+              {getDiffFileDisplayPath(selectedFile)}
+            </span>
+            <CopyPathButton value={getDiffFileDisplayPath(selectedFile)} />
+          </div>
           <DiffModeToggle
             value={effectiveDiffMode}
             onChange={(mode) => setFileDiffModeOverride(fileId, mode)}
