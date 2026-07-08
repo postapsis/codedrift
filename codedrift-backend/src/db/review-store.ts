@@ -1,0 +1,179 @@
+/*
+ * Author: Jamius Siam
+ * Since: 23/06/2026
+ */
+import { uuidv7 } from "uuidv7";
+import { db } from "./database.ts";
+import type {
+  RefType,
+  Review,
+  ReviewInfo,
+  ReviewOverview,
+  ReviewRepository,
+  ReviewRepositoryInfo,
+} from "../@types/review.ts";
+
+type ReviewRow = {
+  id: string;
+  name: string;
+  created_date: string;
+};
+
+type ReviewRepositoryRow = {
+  repository_id: string;
+  repository_name: string;
+  base_ref: string;
+  head_ref: string;
+};
+
+type ReviewRepositoryInfoRow = {
+  repository_id: string;
+  repository_name: string;
+  repository_path: string;
+  base_ref: string;
+  head_ref: string;
+  ref_type: RefType;
+};
+
+type ReviewOverviewRow = {
+  id: string;
+  overview: string | null;
+};
+
+export type ReviewRepositoryInput = {
+  repositoryId: string;
+  baseRef: string;
+  headRef: string;
+  refType: RefType;
+};
+
+const insertReviewStatement = db.prepare(
+  "INSERT INTO reviews (id, name) VALUES (@id, @name) RETURNING *",
+);
+
+const insertReviewRepositoryStatement = db.prepare(
+  "INSERT INTO review_repositories (id, review_id, repository_id, base_ref, head_ref, ref_type) " +
+    "VALUES (@id, @reviewId, @repositoryId, @baseRef, @headRef, @refType)",
+);
+
+const selectReviewByIdStatement = db.prepare("SELECT * FROM reviews WHERE id = @id");
+
+const selectAllReviewsStatement = db.prepare("SELECT * FROM reviews ORDER BY created_date DESC");
+
+const selectReviewRepositoriesStatement = db.prepare(
+  "SELECT rr.repository_id, rr.base_ref, rr.head_ref, r.name AS repository_name " +
+    "FROM review_repositories rr " +
+    "JOIN repositories r ON r.id = rr.repository_id " +
+    "WHERE rr.review_id = @reviewId " +
+    "ORDER BY r.name",
+);
+
+const selectReviewInfoRepositoriesStatement = db.prepare(
+  "SELECT r.id AS repository_id, r.name AS repository_name, r.path AS repository_path, " +
+    "rr.base_ref, rr.head_ref, rr.ref_type " +
+    "FROM review_repositories rr " +
+    "JOIN repositories r ON r.id = rr.repository_id " +
+    "WHERE rr.review_id = @reviewId " +
+    "ORDER BY r.name",
+);
+
+const deleteStatement = db.prepare("DELETE FROM reviews WHERE id = @id");
+
+const updateReviewOverviewStatement = db.prepare(
+  "UPDATE reviews SET overview = @overview WHERE id = @id",
+);
+
+const selectReviewOverviewStatement = db.prepare("SELECT id, overview FROM reviews WHERE id = @id");
+
+const mapReviewRepositoryRow = (row: ReviewRepositoryRow): ReviewRepository => ({
+  repositoryId: row.repository_id,
+  repositoryName: row.repository_name,
+  baseRef: row.base_ref,
+  headRef: row.head_ref,
+});
+
+const mapReviewRow = (row: ReviewRow): Review => ({
+  id: row.id,
+  name: row.name,
+  createdDate: row.created_date,
+  repositories: (
+    selectReviewRepositoriesStatement.all({ reviewId: row.id }) as ReviewRepositoryRow[]
+  ).map(mapReviewRepositoryRow),
+});
+
+const insertReview = db.transaction((name: string, items: ReviewRepositoryInput[]): string => {
+  const id = uuidv7();
+  insertReviewStatement.run({ id, name });
+
+  for (const item of items) {
+    insertReviewRepositoryStatement.run({
+      id: uuidv7(),
+      reviewId: id,
+      repositoryId: item.repositoryId,
+      baseRef: item.baseRef,
+      headRef: item.headRef,
+      refType: item.refType,
+    });
+  }
+
+  return id;
+});
+
+export const saveReview = (name: string, items: ReviewRepositoryInput[]): Review => {
+  const id = insertReview(name, items);
+
+  return getReviewById(id) as Review;
+};
+
+export const getReviewById = (id: string): Review | null => {
+  const row = selectReviewByIdStatement.get({ id }) as ReviewRow | undefined;
+
+  return row ? mapReviewRow(row) : null;
+};
+
+const mapReviewRepositoryInfoRow = (row: ReviewRepositoryInfoRow): ReviewRepositoryInfo => ({
+  repositoryId: row.repository_id,
+  repositoryName: row.repository_name,
+  repositoryPath: row.repository_path,
+  baseRef: row.base_ref,
+  headRef: row.head_ref,
+  refType: row.ref_type,
+});
+
+export const getReviewInfo = (id: string): ReviewInfo | null => {
+  const row = selectReviewByIdStatement.get({ id }) as ReviewRow | undefined;
+
+  if (!row) {
+    return null;
+  }
+
+  const repositories = (
+    selectReviewInfoRepositoriesStatement.all({ reviewId: id }) as ReviewRepositoryInfoRow[]
+  ).map(mapReviewRepositoryInfoRow);
+
+  return {
+    reviewId: row.id,
+    name: row.name,
+    repositories,
+  };
+};
+
+export const setReviewOverview = (id: string, overview: string): boolean => {
+  return updateReviewOverviewStatement.run({ id, overview }).changes > 0;
+};
+
+export const getReviewOverview = (id: string): ReviewOverview | null => {
+  const row = selectReviewOverviewStatement.get({ id }) as ReviewOverviewRow | undefined;
+
+  return row ? { reviewId: row.id, overview: row.overview } : null;
+};
+
+export const listReviews = (): Review[] => {
+  const rows = selectAllReviewsStatement.all() as ReviewRow[];
+
+  return rows.map(mapReviewRow);
+};
+
+export const deleteReview = (id: string): boolean => {
+  return deleteStatement.run({ id }).changes > 0;
+};

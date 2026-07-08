@@ -10,6 +10,8 @@ This is an open source fully client-side application about code management/code 
 6. Tanstack Query
 7. Zod
 8. Vite
+9. Zustand (client state)
+10. Sonner (toasts)
 
 ## Rules
 
@@ -35,4 +37,4 @@ Here are some rules for the project:
     14. If variables can be moved outside the component, do so.
     15. Use Zod for form validation.
     16. Use Zustand for state management.
-    17. Use Tanstack Query for data fetching/mutations.
+    17. Use Tanstack Query for data fetching/mutations. And create services for the fetch/mutation functions.

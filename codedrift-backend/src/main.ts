@@ -1,74 +1,27 @@
+#!/usr/bin/env node
+
 /*
  * Author: Jamius Siam
  * Since: 30/05/2026
  */
 import "dotenv/config";
-import Fastify, { type FastifyReply } from "fastify";
-import { DiffService } from "./services/diff-service.ts";
-import type { DiffFileData } from "./@types/diff.ts";
-import {
-  ChangesetInputError,
-  ChangesetTools,
-  type Changeset,
-  type CommitSummary,
-  type FileContent,
-  type FileHunk,
-} from "./tools/changeset-tools.ts";
-import { DIFF_BASE_REF, DIFF_HEAD_REF, REPOSITORY_PATH } from "./utils/temp-repo-info.ts";
-import type { Tool, ToolExecutionOptions } from "ai";
+import "./db/database.ts";
+import { parseArgs } from "node:util";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import Fastify from "fastify";
+import fastifyStatic from "@fastify/static";
+import { repositoryRoutes } from "./routes/repository-routes.ts";
+import { mcpRoutes } from "./routes/mcp-routes.ts";
+import { reviewRoutes } from "./routes/review-routes.ts";
 
 const fastify = Fastify({
   logger: true,
 });
 
-type FilePathRequestBody = {
-  filePath?: string;
-};
-
-// TODO: Temporary to check tool functionalities, will remove later
-const getToolExecutionOptions = (toolCallId: string): ToolExecutionOptions => ({
-  toolCallId,
-  messages: [],
-});
-
-// TODO: Temporary to check tool functionalities, will remove later
-const createChangesetTools = (): ChangesetTools => {
-  return new ChangesetTools(REPOSITORY_PATH, DIFF_BASE_REF, DIFF_HEAD_REF);
-};
-
-// TODO: Temporary to check tool functionalities, will remove later
-const getRequiredStringBodyField = (body: unknown, fieldName: string): string => {
-  return (body as Record<string, string>)[fieldName]!;
-};
-
-const sendBadRequest = async (reply: FastifyReply, message: string): Promise<void> => {
-  await reply.status(400).send({ message });
-};
-
-const handleChangesetError = async (reply: FastifyReply, error: unknown): Promise<void> => {
-  if (error instanceof ChangesetInputError) {
-    await sendBadRequest(reply, error.message);
-    return;
-  }
-
-  throw error;
-};
-
-const executeChangesetTool = async <Input, Output>(
-  changesetTool: Tool<Input, Output>,
-  input: Input,
-  toolCallId: string,
-): Promise<Output> => {
-  if (!changesetTool.execute) {
-    throw new Error("Changeset tool must define execute");
-  }
-
-  return (await changesetTool.execute(input, getToolExecutionOptions(toolCallId))) as Output;
-};
-
 fastify.addHook("onRequest", async (request, reply): Promise<void> => {
   reply.header("Access-Control-Allow-Origin", "*");
-  reply.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  reply.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   reply.header("Access-Control-Allow-Headers", "Content-Type");
 
   if (request.method === "OPTIONS") {
@@ -76,92 +29,39 @@ fastify.addHook("onRequest", async (request, reply): Promise<void> => {
   }
 });
 
-fastify.get("/diff", async (): Promise<DiffFileData[]> => {
-  return DiffService.getDiffFiles();
+await fastify.register(repositoryRoutes);
+await fastify.register(mcpRoutes);
+await fastify.register(reviewRoutes);
+
+const { values } = parseArgs({
+  options: {
+    port: { type: "string", short: "p" },
+  },
+  strict: false,
 });
 
-fastify.post("/tools/changeset/all-commits", async (): Promise<CommitSummary[]> => {
-  const changesetTools = createChangesetTools();
+const port = Number(values.port) || 19019;
 
-  return executeChangesetTool(changesetTools.tools.allCommits, {}, "manual-all-commits");
-});
+// Serve the built React SPA at /app (present once the frontend has been built + copied).
+const webDir = path.join(import.meta.dirname, "..", "public");
 
-fastify.post<{ Body: FilePathRequestBody }>(
-  "/tools/changeset/hunk",
-  async (request, reply): Promise<FileHunk | void> => {
-    const filePath = getRequiredStringBodyField(request.body, "filePath");
-
-    try {
-      const changesetTools = createChangesetTools();
-
-      return await executeChangesetTool(
-        changesetTools.tools.hunkForFile,
-        { filePath },
-        "manual-hunks-for-file",
+if (existsSync(webDir)) {
+  await fastify.register(
+    (childContext, _opts, done): void => {
+      childContext.register(fastifyStatic, { root: webDir, wildcard: false });
+      childContext.setNotFoundHandler((_request, reply) =>
+        reply.type("text/html").sendFile("index.html"),
       );
-    } catch (error) {
-      await handleChangesetError(reply, error);
-    }
-  },
-);
+      done();
+    },
+    { prefix: "/app" },
+  );
 
-fastify.post<{ Body: FilePathRequestBody }>(
-  "/tools/changeset/file-content-at-base",
-  async (request, reply): Promise<FileContent | void> => {
-    const filePath = getRequiredStringBodyField(request.body, "filePath");
-
-    try {
-      const changesetTools = createChangesetTools();
-
-      return await executeChangesetTool(
-        changesetTools.tools.fileContentAtBase,
-        { filePath },
-        "manual-file-content-at-base",
-      );
-    } catch (error) {
-      await handleChangesetError(reply, error);
-    }
-  },
-);
-
-fastify.post<{ Body: FilePathRequestBody }>(
-  "/tools/changeset/file-content-at-head",
-  async (request, reply): Promise<FileContent | void> => {
-    const filePath = getRequiredStringBodyField(request.body, "filePath");
-
-    try {
-      const changesetTools = createChangesetTools();
-
-      return await executeChangesetTool(
-        changesetTools.tools.fileContentAtHead,
-        { filePath },
-        "manual-file-content-at-head",
-      );
-    } catch (error) {
-      await handleChangesetError(reply, error);
-    }
-  },
-);
-
-fastify.post<{ Body: Changeset }>(
-  "/tools/changeset/add",
-  async (request, reply): Promise<Changeset | void> => {
-    try {
-      const changesetTools = createChangesetTools();
-
-      return await executeChangesetTool(
-        changesetTools.tools.addChangeset,
-        request.body,
-        "manual-add-changeset",
-      );
-    } catch (error) {
-      await handleChangesetError(reply, error);
-    }
-  },
-);
+  console.log(`Serving frontend at http://localhost:${port}/app`);
+}
 
 try {
-  await fastify.listen({ port: 3000 });
+  await fastify.listen({ port });
 } catch (err) {
   fastify.log.error(err);
   process.exit(1);

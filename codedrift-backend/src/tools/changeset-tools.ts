@@ -3,291 +3,473 @@
  * Since: 31/05/2026
  */
 import path from "node:path";
-import { tool, type Tool } from "ai";
-import { simpleGit, type SimpleGit } from "simple-git";
-import { z } from "zod";
+import {
+  getReviewInfo as queryReviewInfo,
+  setReviewOverview as persistReviewOverview,
+} from "../db/review-store.ts";
+import {
+  addChangesetFile as insertChangesetFile,
+  deleteChangeset as removeChangeset,
+  deleteChangesetFile as removeChangesetFileRow,
+  deleteComment as removeComment,
+  getChangesetById,
+  getChangesetFileId,
+  getChangesetFileKeys,
+  getChangesets as queryChangesets,
+  getCommentContext,
+  insertComment,
+  saveChangeset,
+  updateChangeset as persistChangeset,
+  updateChangesetFileSummary as persistChangesetFileSummary,
+  updateComment,
+} from "../db/changeset-store.ts";
+import type {
+  CommentContext,
+  ResolvedChangesetFile,
+  ResolvedChangesetFileComment,
+} from "../db/changeset-store.ts";
+import type {
+  Changeset,
+  ChangesetCommentDetail,
+  ChangesetCommentSide,
+  ChangesetFileCommentInput,
+  ChangesetFileInput,
+  ChangesetInfo,
+  ChangesetInput,
+} from "../@types/changeset.ts";
+import type { ReviewInfo, ReviewOverview, ReviewRepositoryInfo } from "../@types/review.ts";
 
-export interface Changeset {
-  name: string;
-  description: string;
-  filesPaths: string[];
-}
-
-type EmptyToolInput = Record<string, never>;
-
-type FilePathToolInput = {
-  filePath: string;
+export type EditCommentInput = {
+  comment: string;
+  lineNumber?: number | undefined;
+  side?: ChangesetCommentSide | undefined;
 };
 
-export type CommitSummary = {
-  message: string;
-  date: string;
-  changedFilePaths: string[];
-};
-
-export type FileHunk = {
-  hunk: string;
-};
-
-export type FileContent = {
-  filePath: string;
-  content: string;
-};
-
-type CommitMetadata = {
-  message: string;
-  date: string;
-};
-
-type CommitWithChangedFiles = CommitMetadata & {
-  changedFilePaths: string[];
-};
-
-const emptyToolInputSchema = z.object({}).strict();
-
-const filePathToolInputSchema = z
-  .object({
-    filePath: z
-      .string()
-      .min(1)
-      .describe("Repository file path, relative to the configured repository root."),
-  })
-  .strict();
-
-const changesetToolInputSchema = z
-  .object({
-    name: z.string().min(1).describe("Human-readable changeset name."),
-    description: z.string().describe("What this changeset groups together."),
-    filesPaths: z
-      .array(z.string().min(1))
-      .min(1)
-      .describe("Repository file paths, relative to the configured repository root."),
-  })
-  .strict();
-
-export type ChangesetToolSet = {
-  allCommits: Tool<EmptyToolInput, CommitSummary[]>;
-  hunkForFile: Tool<FilePathToolInput, FileHunk>;
-  fileContentAtBase: Tool<FilePathToolInput, FileContent>;
-  fileContentAtHead: Tool<FilePathToolInput, FileContent>;
-  addChangeset: Tool<Changeset, Changeset>;
-  changesetFiles: Tool<EmptyToolInput, string[]>;
+export type UpdateChangesetInput = {
+  name?: string | undefined;
+  description?: string | undefined;
+  order?: number | undefined;
 };
 
 export class ChangesetInputError extends Error {}
 
-export class ChangesetTools {
-  readonly repoPath: string;
-  readonly baseRef: string;
-  readonly headRef: string;
-  readonly git: SimpleGit;
-  readonly tools: ChangesetToolSet;
-  private readonly changesets: Changeset[] = [];
+export const getReviewInfo = (reviewId: string): ReviewInfo => {
+  const info = queryReviewInfo(reviewId);
 
-  constructor(repoPath: string, baseRef: string, headRef: string) {
-    this.repoPath = path.resolve(repoPath);
-    this.baseRef = baseRef;
-    this.headRef = headRef;
-    this.git = simpleGit(this.repoPath);
-    this.tools = {
-      allCommits: tool({
-        description:
-          "List commits between base and head refs with message, date, and changed repository file paths.",
-        inputSchema: emptyToolInputSchema,
-        execute: (): Promise<CommitSummary[]> => this.getAllCommits(),
-      }),
-      hunkForFile: tool({
-        description: "Return git diff hunk for a repository file path between base and head refs.",
-        inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<FileHunk> => this.getHunkForFile(filePath),
-      }),
-      fileContentAtBase: tool({
-        description: "Return full file content for a repository file path at the base ref.",
-        inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<FileContent> =>
-          this.getFileContentAtBase(filePath),
-      }),
-      fileContentAtHead: tool({
-        description: "Return full file content for a repository file path at the head ref.",
-        inputSchema: filePathToolInputSchema,
-        execute: ({ filePath }): Promise<FileContent> =>
-          this.getFileContentAtHead(filePath),
-      }),
-      addChangeset: tool({
-        description:
-          "Add a changeset (name, description, file paths) to the in-memory list. " +
-          "Throws if any file path already belongs to another changeset.",
-        inputSchema: changesetToolInputSchema,
-        execute: (changeset): Promise<Changeset> => this.addChangeset(changeset),
-      }),
-      changesetFiles: tool({
-        description: "Return the list of all file paths across all changesets.",
-        inputSchema: emptyToolInputSchema,
-        execute: (): Promise<string[]> => this.getChangesetFiles(),
-      }),
-    };
+  if (!info) {
+    throw new ChangesetInputError(`Review "${reviewId}" not found`);
   }
 
-  async getAllCommits(): Promise<CommitSummary[]> {
-    const commits = await this.getCommitsWithChangedFiles();
+  return info;
+};
 
-    return commits.map(({ message, date, changedFilePaths }) => ({
-      message,
-      date,
-      changedFilePaths,
-    }));
+export const addChangeset = (reviewId: string, input: ChangesetInput): Changeset => {
+  if (!input.name?.trim()) {
+    throw new ChangesetInputError("Changeset name is required");
   }
 
-  async getHunkForFile(filePath: string): Promise<FileHunk> {
-    const relativePath = this.getRepoRelativePath(filePath);
-
-    const diff = await this.git.diff([this.baseRef, this.headRef, "--", relativePath]);
-
-    return {
-      hunk: diff,
-    };
+  if (!input.files?.length) {
+    throw new ChangesetInputError("Changeset must include at least one file");
   }
 
-  addChangeset(changeset: Changeset): Promise<Changeset> {
-    const filesPaths = changeset.filesPaths.map((filePath) =>
-      this.getRepoRelativePath(filePath),
-    );
+  if (!Number.isInteger(input.order)) {
+    throw new ChangesetInputError("Changeset order must be an integer");
+  }
 
-    const existingFilePaths = new Set(
-      this.changesets.flatMap((existing) => existing.filesPaths),
-    );
+  const info = getReviewInfo(reviewId);
 
-    const seenFilePaths = new Set<string>();
+  const existingFileKeys = new Set(
+    getChangesetFileKeys(reviewId).map((key) => `${key.repositoryId}:${key.filePath}`),
+  );
+  const seenFileKeys = new Set<string>();
+  const resolvedFiles: ResolvedChangesetFile[] = [];
 
-    for (const filePath of filesPaths) {
-      if (seenFilePaths.has(filePath)) {
-        throw new ChangesetInputError(
-          `File path "${filePath}" is listed more than once in the changeset`,
-        );
-      }
+  for (const file of input.files) {
+    const absolutePath = normalizeAbsolutePath(file.filePath);
+    const { repositoryId, relativePath } = resolveRepository(info.repositories, absolutePath);
 
-      if (existingFilePaths.has(filePath)) {
-        throw new ChangesetInputError(
-          `File path "${filePath}" already belongs to another changeset`,
-        );
-      }
-
-      seenFilePaths.add(filePath);
+    if (!file.summary?.trim()) {
+      throw new ChangesetInputError(`File "${absolutePath}" is missing a change summary`);
     }
 
-    const normalizedChangeset: Changeset = { ...changeset, filesPaths };
-    this.changesets.push(normalizedChangeset);
+    const fileKey = `${repositoryId}:${relativePath}`;
 
-    return Promise.resolve(normalizedChangeset);
-  }
+    if (seenFileKeys.has(fileKey)) {
+      throw new ChangesetInputError(
+        `File "${absolutePath}" is listed more than once in the changeset`,
+      );
+    }
 
-  getChangesetFiles(): Promise<string[]> {
-    return Promise.resolve(this.changesets.flatMap((changeset) => changeset.filesPaths));
-  }
+    if (existingFileKeys.has(fileKey)) {
+      throw new ChangesetInputError(`File "${absolutePath}" already belongs to another changeset`);
+    }
 
-  getFileContentAtBase(filePath: string): Promise<FileContent> {
-    return this.getFileContentAtRef(filePath, this.baseRef);
-  }
-
-  getFileContentAtHead(filePath: string): Promise<FileContent> {
-    return this.getFileContentAtRef(filePath, this.headRef);
-  }
-
-  private async getFileContentAtRef(
-    filePath: string,
-    revision: string,
-  ): Promise<FileContent> {
-    const relativePath = this.getRepoRelativePath(filePath);
-    const content = await this.git.raw(["show", `${revision}:${relativePath}`]);
-
-    return {
+    seenFileKeys.add(fileKey);
+    resolvedFiles.push({
+      repositoryId,
       filePath: relativePath,
-      content,
-    };
+      summary: file.summary,
+      comments: (file.comments ?? []).map((comment) => normalizeComment(absolutePath, comment)),
+    });
   }
 
-  private getRange(): string {
-    return `${this.baseRef}..${this.headRef}`;
+  return saveChangeset(reviewId, {
+    name: input.name,
+    description: input.description,
+    order: input.order,
+    files: resolvedFiles,
+  });
+};
+
+export const getChangesetsDetails = (reviewId: string): ChangesetInfo[] => {
+  const info = getReviewInfo(reviewId);
+  const repositoryPathsById = getRepositoryPathsById(info.repositories);
+
+  return queryChangesets(reviewId).map((changeset) => ({
+    changesetId: changeset.id,
+    name: changeset.name,
+    description: changeset.description,
+    order: changeset.order,
+    files: changeset.files.map((file) => ({
+      filePath: toAbsolutePath(repositoryPathsById, file.repositoryId, file.filePath),
+      summary: file.summary,
+      comments: file.comments.map((comment) => ({
+        commentId: comment.id,
+        lineNumber: comment.lineNumber,
+        side: comment.side,
+        comment: comment.comment,
+      })),
+    })),
+  }));
+};
+
+export const getComment = (reviewId: string, commentId: string): ChangesetCommentDetail => {
+  const info = getReviewInfo(reviewId);
+  const context = requireComment(reviewId, commentId);
+
+  return toCommentDetail(info.repositories, context);
+};
+
+export const addComment = (
+  reviewId: string,
+  changesetId: string,
+  filePath: string,
+  comment: ChangesetFileCommentInput,
+): ChangesetCommentDetail => {
+  const info = getReviewInfo(reviewId);
+
+  requireChangeset(reviewId, changesetId);
+
+  const absolutePath = normalizeAbsolutePath(filePath);
+  const { repositoryId, relativePath } = resolveRepository(info.repositories, absolutePath);
+  const changesetFileId = getChangesetFileId(changesetId, repositoryId, relativePath);
+
+  if (!changesetFileId) {
+    throw new ChangesetInputError(
+      `File "${absolutePath}" is not part of changeset "${changesetId}"`,
+    );
   }
 
-  private getRepoRelativePath(filePath: string): string {
-    const normalizedPath = filePath.trim().replaceAll("\\", "/");
+  const saved = insertComment(changesetFileId, normalizeComment(absolutePath, comment));
 
-    if (
-      !normalizedPath ||
-      path.isAbsolute(filePath) ||
-      path.win32.isAbsolute(filePath) ||
-      path.posix.isAbsolute(normalizedPath)
-    ) {
+  return {
+    commentId: saved.id,
+    changesetId,
+    filePath: absolutePath,
+    lineNumber: saved.lineNumber,
+    side: saved.side,
+    comment: saved.comment,
+  };
+};
+
+export const editComment = (
+  reviewId: string,
+  commentId: string,
+  input: EditCommentInput,
+): ChangesetCommentDetail => {
+  const info = getReviewInfo(reviewId);
+  const context = requireComment(reviewId, commentId);
+  const absolutePath = toAbsolutePath(
+    getRepositoryPathsById(info.repositories),
+    context.repositoryId,
+    context.filePath,
+  );
+
+  const merged = normalizeComment(absolutePath, {
+    lineNumber: input.lineNumber ?? context.lineNumber,
+    side: input.side ?? context.side,
+    comment: input.comment,
+  });
+
+  updateComment(commentId, merged);
+
+  return {
+    commentId,
+    changesetId: context.changesetId,
+    filePath: absolutePath,
+    lineNumber: merged.lineNumber,
+    side: merged.side,
+    comment: merged.comment,
+  };
+};
+
+export const deleteComment = (
+  reviewId: string,
+  commentId: string,
+): { commentId: string; deleted: boolean } => {
+  requireComment(reviewId, commentId);
+  removeComment(commentId);
+
+  return { commentId, deleted: true };
+};
+
+export const deleteChangeset = (
+  reviewId: string,
+  changesetId: string,
+): { changesetId: string; deleted: boolean } => {
+  requireChangeset(reviewId, changesetId);
+  removeChangeset(changesetId);
+
+  return { changesetId, deleted: true };
+};
+
+export const updateChangeset = (
+  reviewId: string,
+  changesetId: string,
+  input: UpdateChangesetInput,
+): { changesetId: string; name: string; description: string; order: number } => {
+  if (input.name === undefined && input.description === undefined && input.order === undefined) {
+    throw new ChangesetInputError("At least one of name, description or order must be provided");
+  }
+
+  if (input.name !== undefined && !input.name.trim()) {
+    throw new ChangesetInputError("Changeset name must not be empty");
+  }
+
+  if (input.order !== undefined && !Number.isInteger(input.order)) {
+    throw new ChangesetInputError("Changeset order must be an integer");
+  }
+
+  const changeset = requireChangeset(reviewId, changesetId);
+  const name = input.name ?? changeset.name;
+  const description = input.description ?? changeset.description;
+  const order = input.order ?? changeset.order;
+
+  persistChangeset(changesetId, name, description, order);
+
+  return { changesetId, name, description, order };
+};
+
+export const setChangesetFile = (
+  reviewId: string,
+  changesetId: string,
+  file: ChangesetFileInput,
+): { changesetId: string; filePath: string; summary: string; action: "added" | "updated" } => {
+  const info = getReviewInfo(reviewId);
+
+  requireChangeset(reviewId, changesetId);
+
+  const absolutePath = normalizeAbsolutePath(file.filePath);
+  const { repositoryId, relativePath } = resolveRepository(info.repositories, absolutePath);
+
+  if (!file.summary?.trim()) {
+    throw new ChangesetInputError(`File "${absolutePath}" is missing a change summary`);
+  }
+
+  const changesetFileId = getChangesetFileId(changesetId, repositoryId, relativePath);
+
+  if (changesetFileId) {
+    if (file.comments?.length) {
       throw new ChangesetInputError(
-        "filePath must be a repository file path relative to the configured repository root",
+        `File "${absolutePath}" is already in the changeset — use add_comment to add comments`,
       );
     }
 
-    const repoRelativePath = path.posix.normalize(normalizedPath);
+    persistChangesetFileSummary(changesetFileId, file.summary);
+
+    return { changesetId, filePath: absolutePath, summary: file.summary, action: "updated" };
+  }
+
+  const alreadyGrouped = getChangesetFileKeys(reviewId).some(
+    (key) => key.repositoryId === repositoryId && key.filePath === relativePath,
+  );
+
+  if (alreadyGrouped) {
+    throw new ChangesetInputError(`File "${absolutePath}" already belongs to another changeset`);
+  }
+
+  insertChangesetFile(changesetId, {
+    repositoryId,
+    filePath: relativePath,
+    summary: file.summary,
+    comments: (file.comments ?? []).map((comment) => normalizeComment(absolutePath, comment)),
+  });
+
+  return { changesetId, filePath: absolutePath, summary: file.summary, action: "added" };
+};
+
+export const removeChangesetFile = (
+  reviewId: string,
+  changesetId: string,
+  filePath: string,
+): { changesetId: string; filePath: string; deleted: boolean } => {
+  const info = getReviewInfo(reviewId);
+  const changeset = requireChangeset(reviewId, changesetId);
+
+  const absolutePath = normalizeAbsolutePath(filePath);
+  const { repositoryId, relativePath } = resolveRepository(info.repositories, absolutePath);
+  const changesetFileId = getChangesetFileId(changesetId, repositoryId, relativePath);
+
+  if (!changesetFileId) {
+    throw new ChangesetInputError(
+      `File "${absolutePath}" is not part of changeset "${changesetId}"`,
+    );
+  }
+
+  if (changeset.files.length === 1) {
+    throw new ChangesetInputError(
+      "A changeset must keep at least one file — use delete_changeset to remove it entirely",
+    );
+  }
+
+  removeChangesetFileRow(changesetFileId);
+
+  return { changesetId, filePath: absolutePath, deleted: true };
+};
+
+export const setReviewOverview = (reviewId: string, overview: string): ReviewOverview => {
+  if (!overview?.trim()) {
+    throw new ChangesetInputError("Review overview is required");
+  }
+
+  if (!persistReviewOverview(reviewId, overview)) {
+    throw new ChangesetInputError(`Review "${reviewId}" not found`);
+  }
+
+  return { reviewId, overview };
+};
+
+const normalizeAbsolutePath = (filePath: string): string => {
+  const normalizedPath = path.posix.normalize(filePath.trim().replaceAll("\\", "/"));
+
+  if (!path.posix.isAbsolute(normalizedPath)) {
+    throw new ChangesetInputError(
+      `File path "${filePath}" must be an absolute path inside one of the review's repositories`,
+    );
+  }
+
+  return normalizedPath;
+};
+
+const normalizeRepositoryPath = (repositoryPath: string): string => {
+  const normalizedPath = path.posix.normalize(repositoryPath.trim().replaceAll("\\", "/"));
+
+  return normalizedPath.endsWith("/") ? normalizedPath.slice(0, -1) : normalizedPath;
+};
+
+const getRepositoryPathsById = (repositories: ReviewRepositoryInfo[]): Map<string, string> =>
+  new Map(
+    repositories.map((repository) => [
+      repository.repositoryId,
+      normalizeRepositoryPath(repository.repositoryPath),
+    ]),
+  );
+
+const toAbsolutePath = (
+  repositoryPathsById: Map<string, string>,
+  repositoryId: string,
+  relativePath: string,
+): string => {
+  const repositoryPath = repositoryPathsById.get(repositoryId);
+
+  return repositoryPath ? `${repositoryPath}/${relativePath}` : relativePath;
+};
+
+const requireChangeset = (reviewId: string, changesetId: string): Changeset => {
+  const changeset = getChangesetById(changesetId);
+
+  if (!changeset || changeset.reviewId !== reviewId) {
+    throw new ChangesetInputError(`Changeset "${changesetId}" not found in review "${reviewId}"`);
+  }
+
+  return changeset;
+};
+
+const requireComment = (reviewId: string, commentId: string): CommentContext => {
+  const context = getCommentContext(commentId);
+
+  if (!context || context.reviewId !== reviewId) {
+    throw new ChangesetInputError(`Comment "${commentId}" not found in review "${reviewId}"`);
+  }
+
+  return context;
+};
+
+const toCommentDetail = (
+  repositories: ReviewRepositoryInfo[],
+  context: CommentContext,
+): ChangesetCommentDetail => ({
+  commentId: context.id,
+  changesetId: context.changesetId,
+  filePath: toAbsolutePath(
+    getRepositoryPathsById(repositories),
+    context.repositoryId,
+    context.filePath,
+  ),
+  lineNumber: context.lineNumber,
+  side: context.side,
+  comment: context.comment,
+});
+
+const resolveRepository = (
+  repositories: ReviewRepositoryInfo[],
+  absolutePath: string,
+): { repositoryId: string; relativePath: string } => {
+  let match: { repositoryId: string; repositoryPath: string } | null = null;
+
+  for (const repository of repositories) {
+    const repositoryPath = normalizeRepositoryPath(repository.repositoryPath);
 
     if (
-      repoRelativePath === "." ||
-      repoRelativePath === ".." ||
-      repoRelativePath.startsWith("../")
+      absolutePath.startsWith(`${repositoryPath}/`) &&
+      (!match || repositoryPath.length > match.repositoryPath.length)
     ) {
-      throw new ChangesetInputError(
-        "filePath must be a repository file path relative to the configured repository root",
-      );
+      match = { repositoryId: repository.repositoryId, repositoryPath };
     }
-
-    return repoRelativePath;
   }
 
-  private async getCommitsWithChangedFiles(): Promise<CommitWithChangedFiles[]> {
-    const logOutput = await this.git.raw([
-      "log",
-      this.getRange(),
-      "--name-only",
-      "--pretty=format:%s%x1f%cI",
-    ]);
-
-    return this.parseCommitLog(logOutput);
+  if (!match) {
+    throw new ChangesetInputError(
+      `File "${absolutePath}" is not inside any repository of this review`,
+    );
   }
 
-  private parseCommitLog(logOutput: string): CommitWithChangedFiles[] {
-    const commits: CommitWithChangedFiles[] = [];
-    let currentCommit: CommitWithChangedFiles | null = null;
+  return {
+    repositoryId: match.repositoryId,
+    relativePath: absolutePath.slice(match.repositoryPath.length + 1),
+  };
+};
 
-    for (const line of logOutput.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n")) {
-      const trimmedLine = line.trim();
-
-      if (!trimmedLine) {
-        continue;
-      }
-
-      const commitMetadata = ChangesetTools.parseCommitMetadataLine(trimmedLine);
-
-      if (commitMetadata) {
-        currentCommit = {
-          ...commitMetadata,
-          changedFilePaths: [],
-        };
-        commits.push(currentCommit);
-        continue;
-      }
-
-      currentCommit?.changedFilePaths.push(trimmedLine);
-    }
-
-    return commits;
+const normalizeComment = (
+  absolutePath: string,
+  comment: ChangesetFileCommentInput,
+): ResolvedChangesetFileComment => {
+  if (!Number.isInteger(comment.lineNumber) || comment.lineNumber < 1) {
+    throw new ChangesetInputError(
+      `File "${absolutePath}" has a comment with an invalid line number ` +
+        `(${comment.lineNumber}); line numbers are 1-based integers`,
+    );
   }
 
-  private static parseCommitMetadataLine(line: string): CommitMetadata | null {
-    const [message, date] = line.split("\u001f");
-
-    if (!message || !date) {
-      return null;
-    }
-
-    return {
-      message,
-      date,
-    };
+  if (!comment.comment?.trim()) {
+    throw new ChangesetInputError(
+      `File "${absolutePath}" has an empty comment at line ${comment.lineNumber}`,
+    );
   }
-}
+
+  return {
+    lineNumber: comment.lineNumber,
+    side: comment.side ?? "new",
+    comment: comment.comment,
+  };
+};

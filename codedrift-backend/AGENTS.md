@@ -4,6 +4,8 @@ This is the repository of a code management/code intelligence app called "Codedr
 1. Node
 2. Typescript
 3. Fastify
+4. SQLite (via `better-sqlite3`) for persisting repositories and reviews
+5. simple-git (diffs + branch listing)
 
 ## Rules
 Here are some rules for the project:
@@ -25,4 +27,4 @@ Here are some rules for the project:
     12. Move reused types in the `@types` folder.
     13. If people usually use a specific library for a specific task, prompt the user if they want to use it. (e.g.,
         form validation with Zod)
-   14. Create/update OpneCollection files at `api-collection/Codedrift` for newly created/updated endpoints.
+   14. Create/update OpenCollection files at `api-collection/Codedrift` for newly created/updated endpoints.

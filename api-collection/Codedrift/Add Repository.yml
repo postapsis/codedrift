@@ -1,0 +1,25 @@
+info:
+  name: Add Repository
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/addRepository"
+  headers:
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "repositoryName": "Flightdrift",
+        "repositoryPath": "/home/jamius19/projects/flightdrift"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
