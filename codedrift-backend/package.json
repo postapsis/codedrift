@@ -1,11 +1,20 @@
 {
-  "name": "codedrift-backend",
-  "version": "1.0.0",
+  "name": "codedrift",
+  "version": "0.1.5",
   "main": "dist/main.js",
   "type": "module",
+  "packageManager": "pnpm@11.5.1",
+  "bin": {
+    "codedrift": "dist/main.js"
+  },
+  "files": [
+    "dist",
+    "public"
+  ],
   "scripts": {
     "dev": "tsx --watch src/main.ts",
-    "build": "tsc",
+    "build:web": "pnpm --dir ../codedrift-frontend build && node scripts/copy-frontend.mjs",
+    "build": "pnpm run build:web && tsc",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
@@ -20,7 +29,7 @@
   "keywords": [],
   "author": "POST/APSIS",
   "license": "Apache-2.0",
-  "description": "Codedrift makes reviewing code bearable again!",
+  "description": "Codedrift · AI assisted code reviews for humans",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.13",
@@ -35,6 +44,7 @@
     "typescript-eslint": "^8.60.0"
   },
   "dependencies": {
+    "@fastify/static": "^9.1.3",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^12.11.1",
     "dotenv": "^17.4.2",

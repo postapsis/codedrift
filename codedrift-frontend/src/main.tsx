@@ -18,6 +18,7 @@ const stringifySearch = stringifySearchWith(JSON.stringify, JSON.parse);
 // Create a new router instance
 const router = createRouter({
   routeTree,
+  basepath: "/app",
   stringifySearch: (search) => stringifySearch(search).replace(/%2F/g, "/"),
 });
 const queryClient = new QueryClient();
