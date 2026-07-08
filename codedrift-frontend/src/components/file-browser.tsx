@@ -25,6 +25,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchChangesetDiff, fetchChangesets } from "@/service/changeset-service.ts";
 import { THIN_SCROLLBAR_CLASS } from "@/lib/style-utils.ts";
 import { cn } from "@/lib/utils.ts";
 import { useDiffViewStore } from "@/store/diff-view-store.ts";
@@ -221,7 +223,50 @@ const FileBrowser = (): JSX.Element => {
     [navigate, params],
   );
 
-  // a: previous file, d/v: next file (clamped, following the file browser order).
+  const changesetsQuery = useQuery({
+    queryKey: ["changesets", params.reviewId],
+    queryFn: () => fetchChangesets(params.reviewId),
+  });
+  const queryClient = useQueryClient();
+
+  const goToAdjacentChangeset = useCallback(
+    async (direction: -1 | 1): Promise<void> => {
+      const changesets = changesetsQuery.data ?? [];
+      const currentIndex = changesets.findIndex((changeset) => changeset.id === params.changesetId);
+
+      if (currentIndex < 0) {
+        return;
+      }
+
+      const targetChangeset = changesets[currentIndex + direction];
+
+      if (!targetChangeset) {
+        return;
+      }
+
+      // Stepping back lands on the last file of the previous changeset; forward on the first.
+      let file: string | undefined = undefined;
+
+      if (direction === -1) {
+        const diff = await queryClient.ensureQueryData({
+          queryKey: ["changesetDiff", params.reviewId, targetChangeset.id],
+          queryFn: () => fetchChangesetDiff(params.reviewId, targetChangeset.id),
+        });
+        const orderedFiles = getTreeFilesInOrder(diff.files);
+        const lastFile = orderedFiles[orderedFiles.length - 1];
+        file = lastFile ? getDiffFileDisplayPath(lastFile) : undefined;
+      }
+
+      void navigate({
+        to: CHANGESET_DIFF_ROUTE,
+        params: { reviewId: params.reviewId, changesetId: targetChangeset.id },
+        search: { file },
+      });
+    },
+    [changesetsQuery.data, params.reviewId, params.changesetId, navigate, queryClient],
+  );
+
+  // a: previous file, d: next file. At a boundary, jump to the adjacent changeset.
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent): void => {
       if (event.metaKey || event.ctrlKey || event.altKey || isEditableTarget(event.target)) {
@@ -234,9 +279,16 @@ const FileBrowser = (): JSX.Element => {
 
       const orderedFiles = getTreeFilesInOrder(diffFiles);
       const currentIndex = orderedFiles.findIndex((file) => getDiffFileId(file) === selectedFileId);
+
+      if (currentIndex < 0) {
+        return;
+      }
+
       const nextIndex = currentIndex + (event.key === "a" ? -1 : 1);
 
-      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= orderedFiles.length) {
+      if (nextIndex < 0 || nextIndex >= orderedFiles.length) {
+        event.preventDefault();
+        void goToAdjacentChangeset(event.key === "a" ? -1 : 1);
         return;
       }
 
@@ -250,7 +302,7 @@ const FileBrowser = (): JSX.Element => {
     return (): void => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [diffFiles, selectedFileId, selectFile]);
+  }, [diffFiles, selectedFileId, selectFile, goToAdjacentChangeset]);
 
   const startSidebarResize = (event: PointerEvent<HTMLDivElement>): void => {
     event.currentTarget.setPointerCapture(event.pointerId);
