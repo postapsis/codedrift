@@ -6,14 +6,8 @@ import type { Changeset } from "@/@types/changeset.ts";
 import type { ChangesetDiff } from "@/@types/changeset-diff.ts";
 import type { ApiResponse } from "@/@types/api-response.ts";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
 export const fetchChangesets = async (reviewId: string): Promise<Changeset[]> => {
-  if (!apiBaseUrl) {
-    throw new Error("VITE_API_BASE_URL is not configured");
-  }
-
-  const response = await fetch(`${apiBaseUrl}/review/${reviewId}/changesets`, {
+  const response = await fetch(`/api/review/${reviewId}/changesets`, {
     headers: { Accept: "application/json" },
   });
 
@@ -30,11 +24,7 @@ export const fetchChangesetDiff = async (
   reviewId: string,
   changesetId: string,
 ): Promise<ChangesetDiff> => {
-  if (!apiBaseUrl) {
-    throw new Error("VITE_API_BASE_URL is not configured");
-  }
-
-  const response = await fetch(`${apiBaseUrl}/review/${reviewId}/changeset/${changesetId}/diff`, {
+  const response = await fetch(`/api/review/${reviewId}/changeset/${changesetId}/diff`, {
     headers: { Accept: "application/json" },
   });
 

@@ -41,7 +41,7 @@ type ChangesetDiffParams = {
 
 export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   fastify.post<{ Body: AddReviewBody }>(
-    "/addReview",
+    "/api/addReview",
     async (request, reply): Promise<ApiResponse<Review | null>> => {
       const name = request.body?.name?.trim() ?? "";
       const repositories = request.body?.repositories ?? [];
@@ -110,8 +110,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
             reply.status(400);
             return {
               success: false,
-              message:
-                "Base and head commits must exist in the repository.",
+              message: "Base and head commits must exist in the repository.",
               data: null,
             };
           }
@@ -141,19 +140,19 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
     },
   );
 
-  fastify.get("/reviews", async (): Promise<ApiResponse<Review[]>> => {
+  fastify.get("/api/reviews", async (): Promise<ApiResponse<Review[]>> => {
     return { success: true, message: null, data: listReviews() };
   });
 
   fastify.get<{ Params: ReviewIdParams }>(
-    "/review/:reviewId/changesets",
+    "/api/review/:reviewId/changesets",
     async (request): Promise<ApiResponse<Changeset[]>> => {
       return { success: true, message: null, data: getChangesets(request.params.reviewId) };
     },
   );
 
   fastify.get<{ Params: ReviewIdParams }>(
-    "/review/:reviewId/overview",
+    "/api/review/:reviewId/overview",
     async (request, reply): Promise<ApiResponse<ReviewOverview | null>> => {
       const overview = getReviewOverview(request.params.reviewId);
 
@@ -167,7 +166,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
   );
 
   fastify.get<{ Params: ChangesetDiffParams }>(
-    "/review/:reviewId/changeset/:changesetId/diff",
+    "/api/review/:reviewId/changeset/:changesetId/diff",
     async (request, reply): Promise<ApiResponse<ChangesetDiff | null>> => {
       const diff = await ChangesetDiffService.getChangesetDiff(
         request.params.reviewId,
@@ -184,7 +183,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
   );
 
   fastify.delete<{ Params: ReviewIdParams }>(
-    "/review/:reviewId",
+    "/api/review/:reviewId",
     async (request, reply): Promise<ApiResponse<null>> => {
       const deleted = deleteReview(request.params.reviewId);
 

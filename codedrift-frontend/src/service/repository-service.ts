@@ -5,14 +5,9 @@
 import type {Repository} from "@/@types/repository.ts";
 import type {ApiResponse} from "@/@types/api-response.ts";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 export const fetchRepositories = async (): Promise<Repository[]> => {
-  if (!apiBaseUrl) {
-    throw new Error("VITE_API_BASE_URL is not configured");
-  }
-
-  const response = await fetch(`${apiBaseUrl}/repositories`, {
+  const response = await fetch(`/api/repositories`, {
     headers: { Accept: "application/json" },
   });
 
@@ -29,7 +24,7 @@ export const createRepository = async (input: {
   repositoryName: string;
   repositoryPath: string;
 }): Promise<Repository> => {
-  const response = await fetch(`${apiBaseUrl}/addRepository`, {
+  const response = await fetch(`/api/addRepository`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(input),
@@ -45,7 +40,7 @@ export const createRepository = async (input: {
 };
 
 export const deleteRepository = async (id: string): Promise<void> => {
-  const response = await fetch(`${apiBaseUrl}/repository/${id}`, {
+  const response = await fetch(`/api/repository/${id}`, {
     method: "DELETE",
     headers: { Accept: "application/json" },
   });

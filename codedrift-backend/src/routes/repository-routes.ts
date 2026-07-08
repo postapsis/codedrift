@@ -24,7 +24,7 @@ type RepositoryIdParams = {
 
 export const repositoryRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
   fastify.post<{ Body: AddRepositoryBody }>(
-    "/addRepository",
+    "/api/addRepository",
     async (request, reply): Promise<ApiResponse<Repository | null>> => {
       const repositoryName = request.body?.repositoryName?.trim() ?? "";
       const repositoryPath = (request.body?.repositoryPath ?? "").trim();
@@ -58,15 +58,12 @@ export const repositoryRoutes: FastifyPluginAsync = async (fastify): Promise<voi
     },
   );
 
-  fastify.get(
-    "/repositories",
-    async (): Promise<ApiResponse<Repository[]>> => {
-      return { success: true, message: null, data: listRepositories() };
-    },
-  );
+  fastify.get("/api/repositories", async (): Promise<ApiResponse<Repository[]>> => {
+    return { success: true, message: null, data: listRepositories() };
+  });
 
   fastify.get<{ Params: RepositoryIdParams }>(
-    "/repository/:repositoryId/branches",
+    "/api/repository/:repositoryId/branches",
     async (request, reply): Promise<ApiResponse<string[] | null>> => {
       const repository = getRepositoryById(request.params.repositoryId);
 
@@ -82,7 +79,7 @@ export const repositoryRoutes: FastifyPluginAsync = async (fastify): Promise<voi
   );
 
   fastify.delete<{ Params: RepositoryIdParams }>(
-    "/repository/:repositoryId",
+    "/api/repository/:repositoryId",
     async (request, reply): Promise<ApiResponse<null>> => {
       const deleted = deleteRepository(request.params.repositoryId);
 

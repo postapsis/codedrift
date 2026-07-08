@@ -5,14 +5,8 @@
 import type { Review, ReviewOverview } from "@/@types/review.ts";
 import type { ApiResponse } from "@/@types/api-response.ts";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
 export const fetchReviews = async (): Promise<Review[]> => {
-  if (!apiBaseUrl) {
-    throw new Error("VITE_API_BASE_URL is not configured");
-  }
-
-  const response = await fetch(`${apiBaseUrl}/reviews`, {
+  const response = await fetch(`/api/reviews`, {
     headers: { Accept: "application/json" },
   });
 
@@ -26,7 +20,7 @@ export const fetchReviews = async (): Promise<Review[]> => {
 };
 
 export const fetchReviewOverview = async (reviewId: string): Promise<ReviewOverview> => {
-  const response = await fetch(`${apiBaseUrl}/review/${reviewId}/overview`, {
+  const response = await fetch(`/api/review/${reviewId}/overview`, {
     headers: { Accept: "application/json" },
   });
 
@@ -40,7 +34,7 @@ export const fetchReviewOverview = async (reviewId: string): Promise<ReviewOverv
 };
 
 export const fetchBranches = async (repositoryId: string): Promise<string[]> => {
-  const response = await fetch(`${apiBaseUrl}/repository/${repositoryId}/branches`, {
+  const response = await fetch(`/api/repository/${repositoryId}/branches`, {
     headers: { Accept: "application/json" },
   });
 
@@ -57,7 +51,7 @@ export const createReview = async (input: {
   name: string;
   repositories: { repositoryId: string; baseRef: string; headRef: string }[];
 }): Promise<Review> => {
-  const response = await fetch(`${apiBaseUrl}/addReview`, {
+  const response = await fetch(`/api/addReview`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(input),
@@ -73,7 +67,7 @@ export const createReview = async (input: {
 };
 
 export const deleteReview = async (id: string): Promise<void> => {
-  const response = await fetch(`${apiBaseUrl}/review/${id}`, {
+  const response = await fetch(`/api/review/${id}`, {
     method: "DELETE",
     headers: { Accept: "application/json" },
   });
