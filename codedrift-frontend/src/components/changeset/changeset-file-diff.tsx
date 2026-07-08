@@ -14,6 +14,7 @@ import { useDiffViewStore } from "@/store/diff-view-store.ts";
 import { useSettingsStore } from "@/store/settings-store.ts";
 import { getReviewProgressFileKey, useReviewProgressStore } from "@/store/review-progress-store.ts";
 import { getDiffFileDisplayPath, getDiffFileId } from "@/lib/diff-utils.ts";
+import { isEditableTarget } from "@/lib/keyboard-utils.ts";
 import type { ChangesetDiffFile } from "@/@types/changeset-diff.ts";
 import type { ChangesetFileComment } from "@/@types/changeset.ts";
 import type { DiffMode } from "@/@types/settings.ts";
@@ -65,7 +66,27 @@ const ChangesetFileDiff = ({ reviewId, file }: ChangesetFileDiffProps): JSX.Elem
     file.repositoryId,
     getDiffFileDisplayPath(file, false),
   );
-  const isReviewed = reviewedFiles[progressFileKey] === true;
+  const isReviewed = reviewedFiles[progressFileKey];
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.metaKey || event.ctrlKey || event.altKey || isEditableTarget(event.target)) {
+        return;
+      }
+
+      if (event.key !== "v") {
+        return;
+      }
+
+      setFileReviewed(progressFileKey, !isReviewed);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return (): void => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isReviewed, progressFileKey, setFileReviewed]);
 
   return (
     <div className={`flex h-full flex-col overflow-auto ${THIN_SCROLLBAR_CLASS}`}>

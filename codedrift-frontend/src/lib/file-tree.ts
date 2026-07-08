@@ -109,3 +109,21 @@ const findFirstFile = (items: FileTreeItem[]): ChangesetDiffFile | null => {
 export const getFirstTreeFile = (diffFiles: ChangesetDiffFile[]): ChangesetDiffFile | null => {
   return findFirstFile(buildFileTree(diffFiles));
 };
+
+const collectFiles = (items: FileTreeItem[], files: ChangesetDiffFile[]): void => {
+  for (const item of items) {
+    if (item.file) {
+      files.push(item.file);
+    }
+
+    collectFiles(item.children, files);
+  }
+};
+
+// All files in the order the file browser renders them (pre-order DFS over the sorted tree).
+export const getTreeFilesInOrder = (diffFiles: ChangesetDiffFile[]): ChangesetDiffFile[] => {
+  const files: ChangesetDiffFile[] = [];
+  collectFiles(buildFileTree(diffFiles), files);
+
+  return files;
+};

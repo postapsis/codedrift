@@ -2,7 +2,16 @@
  * Author: Jamius Siam
  * Since: 30/05/2026
  */
-import { useMemo, useRef, useState, type JSX, type KeyboardEvent, type PointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type JSX,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -28,7 +37,13 @@ import {
   getDiffFileDisplayPath,
   getDiffFileId,
 } from "@/lib/diff-utils.ts";
-import { buildFileTree, getFirstTreeFile, type FileTreeItem } from "@/lib/file-tree.ts";
+import {
+  buildFileTree,
+  getFirstTreeFile,
+  getTreeFilesInOrder,
+  type FileTreeItem,
+} from "@/lib/file-tree.ts";
+import { isEditableTarget } from "@/lib/keyboard-utils.ts";
 
 type FileChangeConfig = {
   Icon: LucideIcon;
@@ -90,6 +105,7 @@ const renderTreeItems = (
   onSelectFile: (filePath: string) => void,
   collapsedFolderIds: Set<string>,
   onToggleFolder: (folderId: string) => void,
+  isFileReviewed: (file: ChangesetDiffFile) => boolean,
   level = 0,
 ): JSX.Element[] => {
   return items.flatMap((item) => {
@@ -119,6 +135,7 @@ const renderTreeItems = (
               onSelectFile,
               collapsedFolderIds,
               onToggleFolder,
+              isFileReviewed,
               level + 1,
             )
           : []),
@@ -129,13 +146,14 @@ const renderTreeItems = (
     const config = fileChangeConfig[file.changeType];
     const Icon = config.Icon;
     const isSelected = selectedFileId === item.id;
+    const isReviewed = isFileReviewed(file);
 
     return (
       <div key={item.id} className="relative w-full min-w-max">
         <button
           type="button"
           title={getFileTitle(file)}
-          aria-label={`${config.label}: ${getFileTitle(file)}`}
+          aria-label={`${config.label}: ${getFileTitle(file)}${isReviewed ? " (reviewed)" : ""}`}
           aria-pressed={isSelected}
           className={cn(
             "relative flex h-6 w-full min-w-max items-center gap-1.5 rounded px-3 text-left text-xs",
@@ -145,7 +163,7 @@ const renderTreeItems = (
           style={{ paddingLeft: `${level * TREE_INDENT_WIDTH + TREE_INDENT_WIDTH}px` }}
           onClick={() => onSelectFile(getDiffFileDisplayPath(file))}>
           <Icon strokeWidth={1.8} className={cn("size-4 shrink-0", config.className)} />
-          <span className="whitespace-nowrap">{item.name}</span>
+          <span className={cn("whitespace-nowrap", isReviewed && "font-light")}>{item.name}</span>
           {file.comments.length > 0 && (
             <span className="flex ms-1 shrink-0 items-center gap-0.5 text-muted-foreground">
               <MessageSquare className="size-3" strokeWidth={2.5} />
@@ -174,8 +192,8 @@ const FileBrowser = (): JSX.Element => {
 
   const fileTree = useMemo(() => buildFileTree(diffFiles), [diffFiles]);
 
-  const reviewedFileCount = diffFiles.filter(
-    (file) =>
+  const isFileReviewed = useCallback(
+    (file: ChangesetDiffFile): boolean =>
       reviewedFiles[
         getReviewProgressFileKey(
           params.reviewId,
@@ -183,19 +201,56 @@ const FileBrowser = (): JSX.Element => {
           getDiffFileDisplayPath(file, false),
         )
       ],
-  ).length;
+    [reviewedFiles, params.reviewId],
+  );
+
+  const reviewedFileCount = diffFiles.filter(isFileReviewed).length;
 
   const selectedFile =
     getDiffFileByDisplayPath(diffFiles, search.file) ?? getFirstTreeFile(diffFiles);
   const selectedFileId = selectedFile ? getDiffFileId(selectedFile) : null;
 
-  const selectFile = (filePath: string): void => {
-    void navigate({
-      to: CHANGESET_DIFF_ROUTE,
-      params,
-      search: { file: filePath },
-    });
-  };
+  const selectFile = useCallback(
+    (filePath: string): void => {
+      void navigate({
+        to: CHANGESET_DIFF_ROUTE,
+        params,
+        search: { file: filePath },
+      });
+    },
+    [navigate, params],
+  );
+
+  // a: previous file, d/v: next file (clamped, following the file browser order).
+  useEffect(() => {
+    const handleKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if (event.metaKey || event.ctrlKey || event.altKey || isEditableTarget(event.target)) {
+        return;
+      }
+
+      if (event.key !== "a" && event.key !== "d") {
+        return;
+      }
+
+      const orderedFiles = getTreeFilesInOrder(diffFiles);
+      const currentIndex = orderedFiles.findIndex((file) => getDiffFileId(file) === selectedFileId);
+      const nextIndex = currentIndex + (event.key === "a" ? -1 : 1);
+
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= orderedFiles.length) {
+        return;
+      }
+
+      event.preventDefault();
+
+      selectFile(getDiffFileDisplayPath(orderedFiles[nextIndex]));
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return (): void => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [diffFiles, selectedFileId, selectFile]);
 
   const startSidebarResize = (event: PointerEvent<HTMLDivElement>): void => {
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -289,7 +344,14 @@ const FileBrowser = (): JSX.Element => {
 
       <div className={`min-h-0 flex-1 overflow-auto pt-3 ${THIN_SCROLLBAR_CLASS}`}>
         <div className="inline-flex min-w-full flex-col pb-1 pr-1">
-          {renderTreeItems(fileTree, selectedFileId, selectFile, collapsedFolderIds, toggleFolder)}
+          {renderTreeItems(
+            fileTree,
+            selectedFileId,
+            selectFile,
+            collapsedFolderIds,
+            toggleFolder,
+            isFileReviewed,
+          )}
         </div>
       </div>
 

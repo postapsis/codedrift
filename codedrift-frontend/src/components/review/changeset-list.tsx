@@ -4,9 +4,10 @@
  */
 import type { JSX } from "react";
 import { Link } from "@tanstack/react-router";
-import { CircleCheck, FileDiff } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 import type { Changeset, ChangesetFile } from "@/@types/changeset.ts";
 import { getReviewProgressFileKey, useReviewProgressStore } from "@/store/review-progress-store.ts";
+import { cn } from "@/lib/utils.ts";
 
 interface ChangesetListProps {
   reviewId: string;
@@ -40,13 +41,14 @@ const ChangesetList = ({ reviewId, changesets }: ChangesetListProps): JSX.Elemen
             {changeset.description}
           </span>
           <span className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <FileDiff size={12} />
-              {changeset.files.length} {changeset.files.length === 1 ? "file" : "files"}
-            </span>
-            <span className="flex items-center gap-1">
-              <CircleCheck size={12} />
-              {countReviewedFiles(changeset.files)}/{changeset.files.length} reviewed
+            <span
+              className={cn(
+                "flex items-center gap-1.5",
+                countReviewedFiles(changeset.files) === changeset.files.length &&
+                  "text-emerald-600",
+              )}>
+              <CircleCheck size={12} className="relative bottom-px"/>
+              {countReviewedFiles(changeset.files)}/{changeset.files.length} files reviewed
             </span>
           </span>
         </Link>
