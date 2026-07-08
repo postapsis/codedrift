@@ -33,7 +33,7 @@ const ChangesetDiffPage = (): JSX.Element => {
     queryFn: () => fetchChangesets(reviewId),
   });
 
-  const isLoading = diffQuery.isLoading;
+  const isLoading = diffQuery.isLoading || changesetsQuery.isLoading;
   const errorMessage = diffQuery.error instanceof Error ? diffQuery.error.message : null;
   const changeset = diffQuery.data?.changeset;
 
