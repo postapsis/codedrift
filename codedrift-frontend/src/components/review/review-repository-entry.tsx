@@ -2,19 +2,25 @@
  * Author: Jamius Siam
  * Since: 24/06/2026
  */
-import { type JSX } from "react";
+import { useState, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchBranches } from "@/service/review-service.ts";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select.tsx";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover.tsx";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command.tsx";
 import type { Repository } from "@/@types/repository.ts";
 import type { RefMode, ReviewEntry } from "@/@types/review-entry.ts";
-import { X } from "lucide-react";
+import { ChevronsUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { cn } from "@/lib/utils.ts";
@@ -26,6 +32,77 @@ interface ReviewRepositoryEntryPropType {
   onChange: (key: string, patch: Partial<ReviewEntry>) => void;
   onRemove: (key: string) => void;
 }
+
+interface ComboboxOption {
+  value: string;
+  label: string;
+}
+
+interface ComboboxPropType {
+  value: string;
+  onValueChange: (value: string) => void;
+  options: ComboboxOption[];
+  placeholder: string;
+  searchPlaceholder: string;
+  emptyText: string;
+  disabled?: boolean;
+  className?: string;
+}
+
+const Combobox = ({
+  value,
+  onValueChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+  emptyText,
+  disabled = false,
+  className,
+}: ComboboxPropType): JSX.Element => {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => option.value === value);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className={cn("justify-between font-normal", className)}>
+          <span className={cn("truncate", !selected && "text-muted-foreground")}>
+            {selected ? selected.label : placeholder}
+          </span>
+          <ChevronsUpDown className="shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{emptyText}</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  data-checked={option.value === value}
+                  onSelect={() => {
+                    onValueChange(option.value);
+                    setOpen(false);
+                  }}>
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const refModeOptions: { mode: RefMode; label: string }[] = [
   { mode: "branch", label: "Branch" },
@@ -49,6 +126,15 @@ const ReviewRepositoryEntry = ({
   const branchesDisabled = entry.repositoryId === "" || branchesQuery.isLoading;
   const sameRef = entry.baseRef !== "" && entry.baseRef === entry.headRef;
 
+  const repositoryOptions: ComboboxOption[] = repositories.map((repository) => ({
+    value: repository.id,
+    label: repository.name,
+  }));
+  const branchOptions: ComboboxOption[] = branches.map((branch) => ({
+    value: branch,
+    label: branch,
+  }));
+
   const branchPlaceholder = (): string => {
     if (entry.repositoryId === "") {
       return "Select repository first";
@@ -63,22 +149,17 @@ const ReviewRepositoryEntry = ({
   return (
     <div className="flex flex-col gap-3 rounded-md border border-border p-3">
       <div className="flex items-center gap-2">
-        <Select
+        <Combobox
           value={entry.repositoryId}
           onValueChange={(value) =>
             onChange(entry.key, { repositoryId: value, baseRef: "", headRef: "" })
-          }>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select repository" />
-          </SelectTrigger>
-          <SelectContent>
-            {repositories.map((repository) => (
-              <SelectItem key={repository.id} value={repository.id}>
-                {repository.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          }
+          options={repositoryOptions}
+          placeholder="Select repository"
+          searchPlaceholder="Search repository..."
+          emptyText="No repository found."
+          className="w-full"
+        />
 
         <Button
           type="button"
@@ -118,20 +199,16 @@ const ReviewRepositoryEntry = ({
             Base {entry.refMode === "commit" ? "Commit Hash (Inclusive)" : "Branch"}
           </label>
           {entry.refMode === "branch" ? (
-            <Select
+            <Combobox
               value={entry.baseRef}
-              onValueChange={(value) => onChange(entry.key, { baseRef: value })}>
-              <SelectTrigger disabled={branchesDisabled} className="w-[460px]">
-                <SelectValue placeholder={branchPlaceholder()} />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch} value={branch}>
-                    {branch}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onValueChange={(value) => onChange(entry.key, { baseRef: value })}
+              options={branchOptions}
+              placeholder={branchPlaceholder()}
+              searchPlaceholder="Search branch..."
+              emptyText="No branch found."
+              disabled={branchesDisabled}
+              className="w-[460px]"
+            />
           ) : (
             <Input
               value={entry.baseRef}
@@ -148,20 +225,16 @@ const ReviewRepositoryEntry = ({
             Head {entry.refMode === "commit" ? "Commit Hash" : "Branch"}
           </label>
           {entry.refMode === "branch" ? (
-            <Select
+            <Combobox
               value={entry.headRef}
-              onValueChange={(value) => onChange(entry.key, { headRef: value })}>
-              <SelectTrigger disabled={branchesDisabled} className="w-[460px]">
-                <SelectValue placeholder={branchPlaceholder()} />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch} value={branch}>
-                    {branch}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onValueChange={(value) => onChange(entry.key, { headRef: value })}
+              options={branchOptions}
+              placeholder={branchPlaceholder()}
+              searchPlaceholder="Search branch..."
+              emptyText="No branch found."
+              disabled={branchesDisabled}
+              className="w-[460px]"
+            />
           ) : (
             <Input
               value={entry.headRef}
