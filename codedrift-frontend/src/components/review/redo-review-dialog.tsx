@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button.tsx";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog.tsx";
@@ -56,13 +55,13 @@ const RedoReviewDialog = ({ reviewId, open, onOpenChange }: RedoReviewDialogProp
       <DialogContent className="min-w-[680px]">
         <DialogHeader>
           <DialogTitle>Redo Review</DialogTitle>
-          <DialogDescription>
-            The reviewed branches have changed? Give the instruction below to an AI agent to bring
-            this review up to date.
-          </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
+          <p>
+            The reviewed branches have changed? Give the instruction below to an AI agent to bring
+            this review up to date.
+          </p>
           <div className="flex justify-end">
             <Button
               variant="outline"

@@ -44,6 +44,24 @@ export class GitService {
     return branchSummary.all.includes(ref);
   }
 
+  static async branchExists(repositoryPath: string, ref: string): Promise<boolean> {
+    try {
+      await simpleGit(repositoryPath).raw(["cat-file", "-e", ref]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  static async commitExists(repositoryPath: string, ref: string): Promise<boolean> {
+    try {
+      await simpleGit(repositoryPath).raw(["cat-file", "-e", `${ref}^{commit}`]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private static async isDirectory(targetPath: string): Promise<boolean> {
     try {
       const stats = await stat(targetPath);

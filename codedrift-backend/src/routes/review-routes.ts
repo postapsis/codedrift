@@ -4,7 +4,13 @@
  */
 import type { FastifyPluginAsync } from "fastify";
 import { getRepositoryById } from "../db/repository-store.ts";
-import { saveReview, listReviews, deleteReview, getReviewOverview } from "../db/review-store.ts";
+import {
+  saveReview,
+  listReviews,
+  deleteReview,
+  getReviewOverview,
+  type ReviewRepositoryInput,
+} from "../db/review-store.ts";
 import { getChangesets } from "../db/changeset-store.ts";
 import { ChangesetDiffService } from "../services/changeset-diff-service.ts";
 import { GitService } from "../services/git-service.ts";
@@ -50,14 +56,14 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
         return { success: false, message: "At least one repository is required", data: null };
       }
 
-      const items = repositories.map((repository) => ({
+      const repoDetailList = repositories.map((repository) => ({
         repositoryId: repository.repositoryId?.trim() ?? "",
         baseRef: repository.baseRef?.trim() ?? "",
         headRef: repository.headRef?.trim() ?? "",
       }));
 
-      for (const item of items) {
-        if (!item.repositoryId || !item.baseRef || !item.headRef) {
+      for (const repoDetail of repoDetailList) {
+        if (!repoDetail.repositoryId || !repoDetail.baseRef || !repoDetail.headRef) {
           reply.status(400);
           return {
             success: false,
@@ -66,7 +72,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
           };
         }
 
-        if (item.baseRef === item.headRef) {
+        if (repoDetail.baseRef === repoDetail.headRef) {
           reply.status(400);
           return {
             success: false,
@@ -75,29 +81,61 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
           };
         }
 
-        if (!getRepositoryById(item.repositoryId)) {
+        if (!getRepositoryById(repoDetail.repositoryId)) {
           reply.status(404);
           return { success: false, message: "Repository not found", data: null };
         }
       }
 
-      const repositoryIds = items.map((item) => item.repositoryId);
+      const repositoryIds = repoDetailList.map((repoReviewDetail) => repoReviewDetail.repositoryId);
 
       if (new Set(repositoryIds).size !== repositoryIds.length) {
         reply.status(400);
         return { success: false, message: "A repository can only be added once", data: null };
       }
 
-      const itemsWithRefType = await Promise.all(
-        items.map(async (item) => {
-          const repository = getRepositoryById(item.repositoryId)!;
-          const isBranch = await GitService.isBranch(repository.path, item.baseRef);
+      const repoDetailWithRefType: ReviewRepositoryInput[] = [];
 
-          return { ...item, refType: isBranch ? ("branch" as const) : ("commit" as const) };
-        }),
-      );
+      for (const repoDetail of repoDetailList) {
+        const repository = getRepositoryById(repoDetail.repositoryId)!;
+        const baseIsBranch = await GitService.isBranch(repository.path, repoDetail.baseRef);
 
-      const review = saveReview(name, itemsWithRefType);
+        if (!baseIsBranch) {
+          const [baseExists, headExists] = await Promise.all([
+            GitService.commitExists(repository.path, repoDetail.baseRef),
+            GitService.commitExists(repository.path, repoDetail.headRef),
+          ]);
+
+          if (!baseExists || !headExists) {
+            reply.status(400);
+            return {
+              success: false,
+              message:
+                "Base and head commits must exist in the repository.",
+              data: null,
+            };
+          }
+        } else {
+          const [baseExists, headExists] = await Promise.all([
+            GitService.branchExists(repository.path, repoDetail.baseRef),
+            GitService.branchExists(repository.path, repoDetail.headRef),
+          ]);
+
+          if (!baseExists || !headExists) {
+            reply.status(400);
+            return {
+              success: false,
+              message:
+                "Base or head branch not found. Make sure both branches are checked out locally.",
+              data: null,
+            };
+          }
+        }
+
+        repoDetailWithRefType.push({ ...repoDetail, refType: baseIsBranch ? "branch" : "commit" });
+      }
+
+      const review = saveReview(name, repoDetailWithRefType);
 
       return { success: true, message: null, data: review };
     },
