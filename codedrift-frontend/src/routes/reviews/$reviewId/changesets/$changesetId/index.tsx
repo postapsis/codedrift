@@ -66,6 +66,7 @@ const ChangesetDiffView = (): JSX.Element => {
   const setFileDiffModeOverride = useDiffViewStore((state) => state.setFileDiffModeOverride);
   const codeFontSize = useSettingsStore((state) => state.codeFontSize);
   const diffMode = useSettingsStore((state) => state.diffMode);
+  const copyPathWithRepoName = useSettingsStore((state) => state.copyPathWithRepoName);
 
   const selectedFile =
     getDiffFileByDisplayPath(diffFiles, search.file) ?? getFirstTreeFile(diffFiles) ?? undefined;
@@ -98,7 +99,7 @@ const ChangesetDiffView = (): JSX.Element => {
             <span className="font-mono text-xs text-foreground font-medium">
               {getDiffFileDisplayPath(selectedFile)}
             </span>
-            <CopyPathButton value={getDiffFileDisplayPath(selectedFile)} />
+            <CopyPathButton value={getDiffFileDisplayPath(selectedFile, copyPathWithRepoName)} />
           </div>
           <DiffModeToggle
             value={effectiveDiffMode}

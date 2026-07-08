@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog.tsx";
 import { Slider } from "@/components/ui/slider.tsx";
 import DiffModeToggle from "@/components/settings/diff-mode-toggle.tsx";
+import { cn } from "@/lib/utils.ts";
 import { useSettingsStore } from "@/store/settings-store.ts";
 
 const CODE_FONT_SIZE_MIN = 10;
@@ -24,6 +25,8 @@ const SettingsDialog = (): JSX.Element => {
   const setCodeFontSize = useSettingsStore((state) => state.setCodeFontSize);
   const diffMode = useSettingsStore((state) => state.diffMode);
   const setDiffMode = useSettingsStore((state) => state.setDiffMode);
+  const copyPathWithRepoName = useSettingsStore((state) => state.copyPathWithRepoName);
+  const setCopyPathWithRepoName = useSettingsStore((state) => state.setCopyPathWithRepoName);
 
   return (
     <Dialog>
@@ -57,6 +60,35 @@ const SettingsDialog = (): JSX.Element => {
             <div className="flex flex-col gap-2">
               <span className="text-xs font-medium text-foreground">Diff style</span>
               <DiffModeToggle value={diffMode} onChange={setDiffMode} />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-foreground">
+                Should the Copied file path include the repository name?
+              </span>
+              <div className="inline-flex w-fit items-center gap-0.5 rounded-md border border-border">
+                {[
+                  { withRepo: true, label: "Yes" },
+                  { withRepo: false, label: "No" },
+                ].map(({ withRepo, label }) => {
+                  const isActive = copyPathWithRepoName === withRepo;
+
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      aria-pressed={isActive}
+                      title={label}
+                      onClick={() => setCopyPathWithRepoName(withRepo)}
+                      className={cn(
+                        "rounded px-2 py-1 text-xs text-muted-foreground hover:text-foreground",
+                        isActive && "bg-nav-active/40 text-foreground",
+                      )}>
+                      <span className="whitespace-nowrap">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

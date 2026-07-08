@@ -8,11 +8,14 @@ export const getDiffFileId = (file: ChangesetDiffFile): string => {
   return `${file.repositoryId}:${file.changeType}:${file.oldFileName}:${file.newFileName}`;
 };
 
-export const getDiffFileDisplayPath = (file: ChangesetDiffFile): string => {
+export const getDiffFileDisplayPath = (
+  file: ChangesetDiffFile,
+  copyPathWithRepoName = true,
+): string => {
   const filePath =
     file.changeType === "deleted" ? file.oldFileName : file.newFileName || file.oldFileName;
 
-  return `${file.repositoryName}/${filePath}`;
+  return copyPathWithRepoName ? `${file.repositoryName}/${filePath}` : filePath;
 };
 
 export const getDiffFileByDisplayPath = (

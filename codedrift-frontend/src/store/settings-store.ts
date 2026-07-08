@@ -9,8 +9,10 @@ import type { DiffMode } from "@/@types/settings.ts";
 type SettingsStore = {
   codeFontSize: number;
   diffMode: DiffMode;
+  copyPathWithRepoName: boolean;
   setCodeFontSize: (codeFontSize: number) => void;
   setDiffMode: (diffMode: DiffMode) => void;
+  setCopyPathWithRepoName: (copyPathWithRepoName: boolean) => void;
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -18,11 +20,15 @@ export const useSettingsStore = create<SettingsStore>()(
     (set) => ({
       codeFontSize: 12,
       diffMode: "split",
+      copyPathWithRepoName: false,
       setCodeFontSize: (codeFontSize): void => {
         set({ codeFontSize });
       },
       setDiffMode: (diffMode): void => {
         set({ diffMode });
+      },
+      setCopyPathWithRepoName: (copyPathWithRepoName): void => {
+        set({ copyPathWithRepoName });
       },
     }),
     {
