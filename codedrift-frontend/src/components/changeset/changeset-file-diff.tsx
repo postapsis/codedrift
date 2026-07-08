@@ -75,7 +75,7 @@ const ChangesetFileDiff = ({ reviewId, file }: ChangesetFileDiffProps): JSX.Elem
         return;
       }
 
-      if (event.key !== "v") {
+      if (event.key.toLowerCase() !== "v") {
         return;
       }
 
@@ -96,7 +96,12 @@ const ChangesetFileDiff = ({ reviewId, file }: ChangesetFileDiffProps): JSX.Elem
         return;
       }
 
-      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") {
+      if (
+        event.key !== "ArrowUp" &&
+        event.key !== "ArrowDown" &&
+        event.key.toLowerCase() !== "w" &&
+        event.key.toLowerCase() !== "s"
+      ) {
         return;
       }
 
@@ -106,10 +111,12 @@ const ChangesetFileDiff = ({ reviewId, file }: ChangesetFileDiffProps): JSX.Elem
         return;
       }
 
+      const direction = event.key === "ArrowUp" || event.key.toLowerCase() === "w" ? -1 : 1;
+
       event.preventDefault();
-      const pageAmount = container.clientHeight * 0.6;
+      const pageAmount = container.clientHeight * 0.4;
       container.scrollBy({
-        top: event.key === "ArrowDown" ? pageAmount : -pageAmount,
+        top: pageAmount * direction,
         behavior: "smooth",
       });
     };

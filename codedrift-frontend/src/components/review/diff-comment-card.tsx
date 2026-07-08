@@ -59,7 +59,11 @@ const DiffCommentCards = ({
             className="ml-auto size-6 shrink-0 text-muted-foreground"
             title="Copy reference for AI agent"
             onClick={() => void handleCopy(comment)}>
-            {copiedId === comment.id ? <Check size={14} /> : <Copy size={14} />}
+            {copiedId === comment.id ? (
+              <Check size={14} className="stroke-muted-foreground" />
+            ) : (
+              <Copy size={14} className="stroke-muted-foreground" />
+            )}
           </Button>
         </div>
       ))}

@@ -273,7 +273,7 @@ const FileBrowser = (): JSX.Element => {
         return;
       }
 
-      if (event.key !== "a" && event.key !== "d") {
+      if (event.key.toLowerCase() !== "a" && event.key.toLowerCase() !== "d") {
         return;
       }
 
@@ -284,11 +284,11 @@ const FileBrowser = (): JSX.Element => {
         return;
       }
 
-      const nextIndex = currentIndex + (event.key === "a" ? -1 : 1);
+      const nextIndex = currentIndex + (event.key.toLowerCase() === "a" ? -1 : 1);
 
       if (nextIndex < 0 || nextIndex >= orderedFiles.length) {
         event.preventDefault();
-        void goToAdjacentChangeset(event.key === "a" ? -1 : 1);
+        void goToAdjacentChangeset(event.key.toLowerCase() === "a" ? -1 : 1);
         return;
       }
 
