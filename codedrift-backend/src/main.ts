@@ -4,6 +4,7 @@
  */
 import "dotenv/config";
 import "./db/database.ts";
+import { parseArgs } from "node:util";
 import Fastify from "fastify";
 import { repositoryRoutes } from "./routes/repository-routes.ts";
 import { mcpRoutes } from "./routes/mcp-routes.ts";
@@ -27,8 +28,17 @@ await fastify.register(repositoryRoutes);
 await fastify.register(mcpRoutes);
 await fastify.register(reviewRoutes);
 
+const { values } = parseArgs({
+  options: {
+    port: { type: "string", short: "p" },
+  },
+  strict: false,
+});
+
+const port = Number(values.port) || 19019;
+
 try {
-  await fastify.listen({ port: 3000 });
+  await fastify.listen({ port });
 } catch (err) {
   fastify.log.error(err);
   process.exit(1);
