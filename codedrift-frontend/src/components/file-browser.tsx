@@ -269,7 +269,13 @@ const FileBrowser = (): JSX.Element => {
   // a: previous file, d: next file. At a boundary, jump to the adjacent changeset.
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent): void => {
-      if (event.metaKey || event.ctrlKey || event.altKey || isEditableTarget(event.target)) {
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.shiftKey ||
+        isEditableTarget(event.target)
+      ) {
         return;
       }
 

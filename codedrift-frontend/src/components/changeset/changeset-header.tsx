@@ -2,10 +2,11 @@
  * Author: Jamius Siam
  * Since: 08/07/2026
  */
-import { type JSX, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import MarkdownContent from "@/components/markdown-content.tsx";
+import { isEditableTarget } from "@/lib/keyboard-utils.ts";
 import type { Changeset } from "@/@types/changeset.ts";
 import type { ChangesetDiff } from "@/@types/changeset-diff.ts";
 
@@ -23,6 +24,35 @@ const ChangesetHeader = ({
   nextChangeset,
 }: ChangesetHeaderProps): JSX.Element => {
   const [showOverview, setShowOverview] = useState(true);
+
+  const hasDescription = Boolean(changeset?.description);
+
+  // q: toggle the changeset overview.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.shiftKey ||
+        isEditableTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.key.toLowerCase() !== "q" || !hasDescription) {
+        return;
+      }
+
+      setShowOverview((prev) => !prev);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return (): void => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [hasDescription]);
 
   return (
     <div className="flex flex-col gap-2 border-b border-muted pb-3">

@@ -15,6 +15,7 @@ import { fetchChangesetDiff, fetchChangesets } from "@/service/changeset-service
 import PageTitle from "@/components/page-title.tsx";
 import { getDiffFileByDisplayPath, getDiffFileDisplayPath } from "@/lib/diff-utils.ts";
 import { getFirstTreeFile } from "@/lib/file-tree.ts";
+import { isEditableTarget } from "@/lib/keyboard-utils.ts";
 
 type ChangesetDiffSearch = { file?: string };
 
@@ -50,6 +51,44 @@ const ChangesetDiffPage = (): JSX.Element => {
   useEffect(() => {
     setDiffFiles(diffQuery.data?.files ?? []);
   }, [diffQuery.data, setDiffFiles]);
+
+  // Shift+A: previous changeset, Shift+D: next changeset.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        !event.shiftKey ||
+        isEditableTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.key.toLowerCase() !== "a" && event.key.toLowerCase() !== "d") {
+        return;
+      }
+
+      const targetChangeset = event.key.toLowerCase() === "a" ? previousChangeset : nextChangeset;
+
+      if (!targetChangeset) {
+        return;
+      }
+
+      event.preventDefault();
+      void navigate({
+        to: "/reviews/$reviewId/changesets/$changesetId",
+        params: { reviewId, changesetId: targetChangeset.id },
+        search: { file: undefined },
+      });
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return (): void => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [previousChangeset, nextChangeset, navigate, reviewId]);
 
   // Keep a valid file in the URL: default to the first file shown in the browser.
   useEffect(() => {
