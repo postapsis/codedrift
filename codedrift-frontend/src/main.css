@@ -197,3 +197,9 @@
   font-family: var(--font-mono);
   font-variant-ligatures: none;
 }
+
+.diff-line-hunk[data-state="hunk"] {
+  --diff-hunk-content--: #efefef !important;
+  --diff-hunk-content-color--: #6c6868 !important;
+  --diff-hunk-lineNumber--: var(--diff-hunk-content--) !important;
+}
