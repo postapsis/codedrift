@@ -20,3 +20,20 @@ export type ReviewOverview = {
   reviewId: string;
   overview: string | null;
 };
+
+export type BaseBranchSyncStatus =
+  | "up-to-date"
+  | "behind"
+  | "not-applicable"
+  | "no-upstream"
+  | "error";
+
+export type ReviewRepositoryBaseStatus = {
+  repositoryId: string;
+  repositoryName: string;
+  baseRef: string;
+  status: BaseBranchSyncStatus;
+  behindBy: number;
+  upstream: string | null;
+  message: string | null;
+};

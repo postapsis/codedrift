@@ -28,7 +28,7 @@
   --accent: oklch(0.928 0 0);
   --accent-foreground: var(--foreground);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.883 0.003 286.344);
+  --border: oklch(0.913 0.001 286.373);
   --input: oklch(0.92 0.004 286.32);
   --ring: oklch(0.808 0 0);
   --chart-1: oklch(0.871 0.006 286.286);
@@ -196,4 +196,10 @@
 
   font-family: var(--font-mono);
   font-variant-ligatures: none;
+}
+
+.diff-line-hunk[data-state="hunk"] {
+  --diff-hunk-content--: #efefef !important;
+  --diff-hunk-content-color--: #6c6868 !important;
+  --diff-hunk-lineNumber--: var(--diff-hunk-content--) !important;
 }

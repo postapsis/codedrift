@@ -60,6 +60,25 @@ const ChangesetFileDiff = ({ reviewId, file }: ChangesetFileDiffProps): JSX.Elem
 
   const extendData = useMemo(() => buildCommentExtendData(file.comments), [file]);
 
+  // Keep the data reference stable across re-renders: DiffView rebuilds (and
+  // resets scroll) whenever it receives a new `data` object.
+  const diffData = useMemo(
+    () => ({
+      oldFile: {
+        fileName: file.oldFileName,
+        fileLang: file.fileLanguage,
+        content: file.oldFileContent,
+      },
+      newFile: {
+        fileName: file.newFileName,
+        fileLang: file.fileLanguage,
+        content: file.newFileContent,
+      },
+      hunks: [file.rawDiff],
+    }),
+    [file],
+  );
+
   const fileId = getDiffFileId(file);
   const effectiveDiffMode = fileDiffModeOverrides[fileId] ?? diffMode;
   const progressFileKey = getReviewProgressFileKey(
@@ -164,19 +183,7 @@ const ChangesetFileDiff = ({ reviewId, file }: ChangesetFileDiffProps): JSX.Elem
         )}
 
         <DiffView<ChangesetFileComment[]>
-          data={{
-            oldFile: {
-              fileName: file.oldFileName,
-              fileLang: file.fileLanguage,
-              content: file.oldFileContent,
-            },
-            newFile: {
-              fileName: file.newFileName,
-              fileLang: file.fileLanguage,
-              content: file.newFileContent,
-            },
-            hunks: [file.rawDiff],
-          }}
+          data={diffData}
           extendData={extendData}
           renderExtendLine={({ data }) =>
             data?.length ? (

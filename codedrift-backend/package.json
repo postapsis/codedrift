@@ -1,6 +1,6 @@
 {
   "name": "@postapsis/codedrift",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "main": "dist/main.js",
   "type": "module",
   "packageManager": "pnpm@11.5.1",
@@ -30,7 +30,11 @@
     "node": ">=22"
   },
   "keywords": [],
-  "author": "POST/APSIS",
+  "author": {
+    "name": "POST/APSIS",
+    "email": "dev@postapsis.com",
+    "url": "https://postapsis.com"
+  },
   "license": "Apache-2.0",
   "description": "Codedrift · AI assisted code reviews for humans",
   "devDependencies": {

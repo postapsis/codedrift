@@ -2,7 +2,7 @@
  * Author: Jamius Siam
  * Since: 23/06/2026
  */
-import type { Review, ReviewOverview } from "@/@types/review.ts";
+import type { Review, ReviewOverview, ReviewRepositoryBaseStatus } from "@/@types/review.ts";
 import type { ApiResponse } from "@/@types/api-response.ts";
 
 export const fetchReviews = async (): Promise<Review[]> => {
@@ -29,6 +29,22 @@ export const fetchReviewOverview = async (reviewId: string): Promise<ReviewOverv
   }
 
   const body: ApiResponse<ReviewOverview> = await response.json();
+
+  return body.data;
+};
+
+export const fetchReviewBaseStatus = async (
+  reviewId: string,
+): Promise<ReviewRepositoryBaseStatus[]> => {
+  const response = await fetch(`/api/review/${reviewId}/base-status`, {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch base branch status (${response.status})`);
+  }
+
+  const body: ApiResponse<ReviewRepositoryBaseStatus[]> = await response.json();
 
   return body.data;
 };
