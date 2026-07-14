@@ -8,6 +8,7 @@ import {
   saveReview,
   listReviews,
   deleteReview,
+  getReviewInfo,
   getReviewOverview,
   type ReviewRepositoryInput,
 } from "../db/review-store.ts";
@@ -15,7 +16,7 @@ import { getChangesets } from "../db/changeset-store.ts";
 import { ChangesetDiffService } from "../services/changeset-diff-service.ts";
 import { GitService } from "../services/git-service.ts";
 import type { ApiResponse } from "../@types/api-response.ts";
-import type { Review, ReviewOverview } from "../@types/review.ts";
+import type { Review, ReviewOverview, ReviewRepositoryBaseStatus } from "../@types/review.ts";
 import type { Changeset } from "../@types/changeset.ts";
 import type { ChangesetDiff } from "../@types/changeset-diff.ts";
 
@@ -148,6 +149,37 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
     "/api/review/:reviewId/changesets",
     async (request): Promise<ApiResponse<Changeset[]>> => {
       return { success: true, message: null, data: getChangesets(request.params.reviewId) };
+    },
+  );
+
+  fastify.get<{ Params: ReviewIdParams }>(
+    "/api/review/:reviewId/base-status",
+    async (request, reply): Promise<ApiResponse<ReviewRepositoryBaseStatus[] | null>> => {
+      const info = getReviewInfo(request.params.reviewId);
+
+      if (!info) {
+        reply.status(404);
+        return { success: false, message: "Review not found", data: null };
+      }
+
+      const statuses = await Promise.all(
+        info.repositories.map(async (repository): Promise<ReviewRepositoryBaseStatus> => {
+          const sync = await GitService.getBaseBranchSyncStatus(
+            repository.repositoryPath,
+            repository.baseRef,
+            repository.refType,
+          );
+
+          return {
+            repositoryId: repository.repositoryId,
+            repositoryName: repository.repositoryName,
+            baseRef: repository.baseRef,
+            ...sync,
+          };
+        }),
+      );
+
+      return { success: true, message: null, data: statuses };
     },
   );
 

@@ -5,11 +5,17 @@
 import { type JSX, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, GitBranch, RefreshCw } from "lucide-react";
-import { fetchReviews, fetchReviewOverview } from "@/service/review-service.ts";
+import { ArrowLeft, GitBranch, Info, RefreshCw } from "lucide-react";
+import {
+  fetchReviews,
+  fetchReviewOverview,
+  fetchReviewBaseStatus,
+} from "@/service/review-service.ts";
 import { fetchChangesets } from "@/service/changeset-service.ts";
 import Loader from "@/components/loader.tsx";
 import ReviewSetup from "@/components/review/review-setup.tsx";
+import ReviewPullRequired from "@/components/review/review-pull-required.tsx";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
 import ReviewOverview from "@/components/review/review-overview.tsx";
 import ChangesetList from "@/components/review/changeset-list.tsx";
 import RedoReviewDialog from "@/components/review/redo-review-dialog.tsx";
@@ -38,6 +44,12 @@ const ReviewDetail = (): JSX.Element => {
     enabled: changesets.length > 0,
   });
 
+  const baseStatusQuery = useQuery({
+    queryKey: ["reviewBaseStatus", reviewId],
+    queryFn: () => fetchReviewBaseStatus(reviewId),
+    enabled: changesetsQuery.isSuccess && changesets.length === 0,
+  });
+
   const review = reviewsQuery.data?.find((item) => item.id === reviewId);
   const errorMessage =
     changesetsQuery.error instanceof Error ? changesetsQuery.error.message : null;
@@ -57,7 +69,64 @@ const ReviewDetail = (): JSX.Element => {
     }
 
     if (changesets.length === 0) {
-      return <ReviewSetup reviewId={reviewId} />;
+      if (baseStatusQuery.isLoading) {
+        return (
+          <div className="flex items-center gap-1.5">
+            <Loader />
+            <span>Checking base branch status</span>
+          </div>
+        );
+      }
+
+      const baseStatuses = baseStatusQuery.data ?? [];
+      const behind = baseStatuses.filter((status) => status.status === "behind");
+
+      if (behind.length > 0) {
+        return (
+          <ReviewPullRequired
+            repositories={behind}
+            onRefresh={() => void baseStatusQuery.refetch()}
+            isRefreshing={baseStatusQuery.isFetching}
+          />
+        );
+      }
+
+      const unverified =
+        baseStatusQuery.isError ||
+        baseStatuses.some((status) => status.status === "error" || status.status === "no-upstream");
+
+      return (
+        <div className="flex flex-col gap-4">
+          {unverified && (
+            <Alert className="mb-4">
+              <Info />
+              {review?.repositories.length === 1 ? (
+                <AlertTitle>Couldn't verify whether the base branch is up to date</AlertTitle>
+              ) : (
+                <AlertTitle>Couldn't verify whether the base branches are up to date</AlertTitle>
+              )}
+              <AlertDescription>
+                Make sure each repository's base branch is up to date with its remote before setting
+                up this review.
+                <div className="mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void baseStatusQuery.refetch()}
+                    disabled={baseStatusQuery.isFetching}>
+                    <RefreshCw
+                      size={14}
+                      className={baseStatusQuery.isFetching ? "animate-spin" : undefined}
+                    />
+                    {baseStatusQuery.isFetching ? "Checking..." : "Check Again"}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+          <ReviewSetup reviewId={reviewId} />
+        </div>
+      );
     }
 
     return (
