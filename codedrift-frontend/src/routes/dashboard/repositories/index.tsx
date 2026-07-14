@@ -35,6 +35,7 @@ const DashboardRepositories = (): JSX.Element => {
 
   const [showAddRepositoryDialog, setShowAddRepositoryDialog] = useState(false);
   const [name, setName] = useState("");
+  const [nameEdited, setNameEdited] = useState(false);
   const [path, setPath] = useState("");
 
   const [pendingDelete, setPendingDelete] = useState<Repository | null>(null);
@@ -45,6 +46,7 @@ const DashboardRepositories = (): JSX.Element => {
       await queryClient.invalidateQueries({ queryKey: ["repositories"] });
       setShowAddRepositoryDialog(false);
       setName("");
+      setNameEdited(false);
       setPath("");
       toast.success(`Repository "${repository.name}" was added`);
     },
@@ -119,7 +121,11 @@ const DashboardRepositories = (): JSX.Element => {
                 <Input
                   id="repository-name"
                   value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setName(value);
+                    setNameEdited(value.trim().length > 0);
+                  }}
                   placeholder="my-repo"
                 />
               </div>
@@ -131,7 +137,13 @@ const DashboardRepositories = (): JSX.Element => {
                 <Input
                   id="repository-path"
                   value={path}
-                  onChange={(event) => setPath(event.target.value)}
+                  onChange={(event) => {
+                    const nextPath = event.target.value;
+                    setPath(nextPath);
+                    if (!nameEdited) {
+                      setName(nextPath.split("/").filter(Boolean).pop() ?? "");
+                    }
+                  }}
                   placeholder="/home/user/projects/my-repo"
                   className="font-mono"
                 />
