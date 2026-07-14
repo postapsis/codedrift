@@ -30,7 +30,11 @@
     "node": ">=22"
   },
   "keywords": [],
-  "author": "POST/APSIS",
+  "author": {
+    "name": "POST/APSIS",
+    "email": "dev@postapsis.com",
+    "url": "https://postapsis.com"
+  },
   "license": "Apache-2.0",
   "description": "Codedrift · AI assisted code reviews for humans",
   "devDependencies": {
